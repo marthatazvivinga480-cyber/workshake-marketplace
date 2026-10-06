@@ -31,11 +31,31 @@ service cloud.firestore {
     match /providers/{uid} {
       allow read: if true;
 
-      allow create, update, delete: if isSelf(uid);
+      allow create: if isSelf(uid)
+        && request.resource.data.userId == request.auth.uid
+        && exists(
+          /databases/$(database)/documents/providerApplications/$(uid)
+        )
+        && get(
+          /databases/$(database)/documents/providerApplications/$(uid)
+        ).data.status == 'approved';
+
+      allow update: if isSelf(uid)
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid
+        && exists(
+          /databases/$(database)/documents/providerApplications/$(uid)
+        )
+        && get(
+          /databases/$(database)/documents/providerApplications/$(uid)
+        ).data.status == 'approved';
+
+      allow delete: if false;
     }
 
     match /providerApplications/{uid} {
-      allow create: if isSelf(uid);
+      allow create: if isSelf(uid)
+        && request.resource.data.userId == request.auth.uid;
 
       allow read: if signedIn()
         && (
@@ -47,7 +67,8 @@ service cloud.firestore {
         && (
           request.auth.uid == uid
           || resource.data.userId == request.auth.uid
-        );
+        )
+        && request.resource.data.userId == request.auth.uid;
 
       allow delete: if false;
     }
@@ -58,6 +79,8 @@ service cloud.firestore {
 
       allow create: if signedIn()
         && request.resource.data.senderId == request.auth.uid
+        && request.resource.data.participantIds is list
+        && request.resource.data.participantIds.size() >= 2
         && request.auth.uid in request.resource.data.participantIds
         && request.resource.data.body is string
         && request.resource.data.body.size() > 0
@@ -86,12 +109,21 @@ service cloud.firestore {
 
       allow update: if signedIn()
         && (
-          resource.data.providerId == request.auth.uid
-          || (
+          (
+            resource.data.providerId == request.auth.uid
+            && request.resource.data.providerId == resource.data.providerId
+            && request.resource.data.customerId == resource.data.customerId
+            && request.resource.data.jobId == resource.data.jobId
+          )
+          ||
+          (
             resource.data.customerId == request.auth.uid
             && request.resource.data.diff(resource.data)
               .affectedKeys()
-              .hasOnly(['status', 'updatedAt'])
+              .hasOnly([
+                'status',
+                'updatedAt'
+              ])
             && request.resource.data.status in [
               'accepted',
               'declined'
@@ -111,16 +143,44 @@ service cloud.firestore {
         );
 
       allow create: if signedIn()
+        && request.resource.data.customerId is string
+        && request.resource.data.providerId is string
         && (
           request.resource.data.customerId == request.auth.uid
           || request.resource.data.providerId == request.auth.uid
         );
 
       allow update: if signedIn()
-        && (
-          resource.data.customerId == request.auth.uid
-          || resource.data.providerId == request.auth.uid
-        );
+        && resource.data.customerId == request.auth.uid
+        && request.resource.data.customerId == resource.data.customerId
+        && request.resource.data.providerId == resource.data.providerId
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly([
+            'date',
+            'time',
+            'location',
+            'note',
+            'updatedAt'
+          ]);
+
+      allow update: if signedIn()
+        && resource.data.providerId == request.auth.uid
+        && request.resource.data.customerId == resource.data.customerId
+        && request.resource.data.providerId == resource.data.providerId
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly([
+            'status',
+            'updatedAt'
+          ])
+        && request.resource.data.status in [
+          'Confirmed',
+          'In progress',
+          'Completed',
+          'Declined',
+          'Cancelled'
+        ];
 
       allow delete: if false;
     }
@@ -129,9 +189,28 @@ service cloud.firestore {
       allow read: if true;
 
       allow create: if signedIn()
-        && request.resource.data.authorId == request.auth.uid;
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.bookingId is string
+        && request.resource.data.providerId is string
+        && request.resource.data.rating is number
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && exists(
+          /databases/$(database)/documents/bookings/$(request.resource.data.bookingId)
+        )
+        && get(
+          /databases/$(database)/documents/bookings/$(request.resource.data.bookingId)
+        ).data.customerId == request.auth.uid
+        && get(
+          /databases/$(database)/documents/bookings/$(request.resource.data.bookingId)
+        ).data.providerId == request.resource.data.providerId
+        && get(
+          /databases/$(database)/documents/bookings/$(request.resource.data.bookingId)
+        ).data.status == 'Completed';
 
-      allow update, delete: if signedIn()
+      allow update: if false;
+
+      allow delete: if signedIn()
         && resource.data.authorId == request.auth.uid;
     }
 

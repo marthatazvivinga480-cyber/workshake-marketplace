@@ -17,8 +17,8 @@ import { JobCard } from '../components/JobCard'
 import { ProviderCard } from '../components/ProviderCard'
 import { SEO } from '../components/SEO'
 import { categories } from '../data/categories'
-import { providers } from '../data/providers'
 import { db } from '../lib/firebase'
+import type { Provider } from '../types'
 
 type SearchMode = 'jobs' | 'providers'
 
@@ -37,8 +37,44 @@ type FirestoreJob = {
   createdAt?: Timestamp | null
 }
 
+type FirestoreReview = {
+  providerId: string
+  rating: number
+}
+
+function getInitials(name: string) {
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+
+  if (!parts.length) {
+    return 'WS'
+  }
+
+  return parts
+    .slice(0, 2)
+    .map(
+      (part) =>
+        part[0]?.toUpperCase() ?? '',
+    )
+    .join('')
+}
+
+function categoryNameFromSlug(
+  slug: string,
+) {
+  return (
+    categories.find(
+      (category) =>
+        category.slug === slug,
+    )?.name ?? 'General'
+  )
+}
+
 export default function FindHelpPage() {
-  const [params, setParams] = useSearchParams()
+  const [params, setParams] =
+    useSearchParams()
 
   const [mode, setMode] =
     useState<SearchMode>('jobs')
@@ -46,11 +82,24 @@ export default function FindHelpPage() {
   const [jobs, setJobs] =
     useState<FirestoreJob[]>([])
 
+  const [providers, setProviders] =
+    useState<Provider[]>([])
+
   const [loadingJobs, setLoadingJobs] =
     useState(true)
 
+  const [
+    loadingProviders,
+    setLoadingProviders,
+  ] = useState(true)
+
   const [jobsError, setJobsError] =
     useState('')
+
+  const [
+    providersError,
+    setProvidersError,
+  ] = useState('')
 
   const searchQuery =
     params.get('q') ?? ''
@@ -72,9 +121,10 @@ export default function FindHelpPage() {
       setJobsError('')
 
       try {
-        const snapshot = await getDocs(
-          collection(db, 'jobs'),
-        )
+        const snapshot =
+          await getDocs(
+            collection(db, 'jobs'),
+          )
 
         const liveJobs: FirestoreJob[] =
           snapshot.docs
@@ -85,58 +135,69 @@ export default function FindHelpPage() {
                 id: document.id,
 
                 title:
-                  typeof data.title === 'string'
+                  typeof data.title ===
+                  'string'
                     ? data.title
                     : 'Untitled job',
 
                 category:
-                  typeof data.category === 'string'
+                  typeof data.category ===
+                  'string'
                     ? data.category
                     : 'General',
 
                 categorySlug:
-                  typeof data.categorySlug === 'string'
+                  typeof data.categorySlug ===
+                  'string'
                     ? data.categorySlug
                     : 'other',
 
                 location:
-                  typeof data.location === 'string'
+                  typeof data.location ===
+                  'string'
                     ? data.location
                     : '',
 
                 description:
-                  typeof data.description === 'string'
+                  typeof data.description ===
+                  'string'
                     ? data.description
                     : '',
 
                 timing:
-                  typeof data.timing === 'string'
+                  typeof data.timing ===
+                  'string'
                     ? data.timing
                     : 'Flexible',
 
                 budgetMin:
-                  typeof data.budgetMin === 'number'
+                  typeof data.budgetMin ===
+                  'number'
                     ? data.budgetMin
                     : 0,
 
                 budgetMax:
-                  typeof data.budgetMax === 'number'
+                  typeof data.budgetMax ===
+                  'number'
                     ? data.budgetMax
                     : 0,
 
                 status:
-                  typeof data.status === 'string'
+                  typeof data.status ===
+                  'string'
                     ? data.status
                     : 'Open',
 
                 createdBy:
-                  typeof data.createdBy === 'string'
+                  typeof data.createdBy ===
+                  'string'
                     ? data.createdBy
                     : '',
 
                 createdAt:
                   data.createdAt &&
-                  typeof data.createdAt.toDate === 'function'
+                  typeof data.createdAt
+                    .toDate === 'function'
                     ? (data.createdAt as Timestamp)
                     : null,
               }
@@ -147,10 +208,12 @@ export default function FindHelpPage() {
             )
             .sort((a, b) => {
               const aTime =
-                a.createdAt?.toMillis?.() ?? 0
+                a.createdAt?.toMillis?.() ??
+                0
 
               const bTime =
-                b.createdAt?.toMillis?.() ?? 0
+                b.createdAt?.toMillis?.() ??
+                0
 
               return bTime - aTime
             })
@@ -175,9 +238,232 @@ export default function FindHelpPage() {
     void loadJobs()
   }, [])
 
+  useEffect(() => {
+    async function loadProviders() {
+      if (!db) {
+        setProvidersError(
+          'Firebase is not configured.',
+        )
+        setLoadingProviders(false)
+        return
+      }
+
+      setLoadingProviders(true)
+      setProvidersError('')
+
+      try {
+        const [
+          providersSnapshot,
+          reviewsSnapshot,
+        ] = await Promise.all([
+          getDocs(
+            collection(db, 'providers'),
+          ),
+
+          getDocs(
+            collection(db, 'reviews'),
+          ),
+        ])
+
+        const reviewData: FirestoreReview[] =
+          reviewsSnapshot.docs
+            .map((document) => {
+              const data =
+                document.data()
+
+              return {
+                providerId:
+                  typeof data.providerId ===
+                  'string'
+                    ? data.providerId
+                    : '',
+
+                rating:
+                  typeof data.rating ===
+                  'number'
+                    ? data.rating
+                    : 0,
+              }
+            })
+            .filter(
+              (review) =>
+                Boolean(
+                  review.providerId,
+                ) &&
+                review.rating >= 1 &&
+                review.rating <= 5,
+            )
+
+        const liveProviders: Provider[] =
+          providersSnapshot.docs.map(
+            (providerDocument) => {
+              const data =
+                providerDocument.data()
+
+              const providerId =
+                providerDocument.id
+
+              const name =
+                typeof data.name ===
+                  'string' &&
+                data.name.trim()
+                  ? data.name.trim()
+                  : 'WorkShake provider'
+
+              const categorySlug =
+                typeof data.categorySlug ===
+                'string'
+                  ? data.categorySlug
+                  : ''
+
+              const category =
+                typeof data.category ===
+                  'string' &&
+                data.category.trim()
+                  ? data.category
+                  : categoryNameFromSlug(
+                      categorySlug,
+                    )
+
+              const providerReviews =
+                reviewData.filter(
+                  (review) =>
+                    review.providerId ===
+                    providerId,
+                )
+
+              const averageRating =
+                providerReviews.length > 0
+                  ? providerReviews.reduce(
+                      (
+                        total,
+                        review,
+                      ) =>
+                        total +
+                        review.rating,
+                      0,
+                    ) /
+                    providerReviews.length
+                  : 0
+
+              const completedJobs =
+                typeof data.completedJobs ===
+                'number'
+                  ? data.completedJobs
+                  : typeof data.jobs ===
+                      'number'
+                    ? data.jobs
+                    : 0
+
+              return {
+                id: providerId,
+
+                userId:
+                  typeof data.userId ===
+                  'string'
+                    ? data.userId
+                    : providerId,
+
+                name,
+
+                initials:
+                  typeof data.initials ===
+                    'string' &&
+                  data.initials.trim()
+                    ? data.initials.trim()
+                    : getInitials(name),
+
+                category,
+
+                categorySlug,
+
+                location:
+                  typeof data.location ===
+                  'string'
+                    ? data.location
+                    : '',
+
+                experience:
+                  typeof data.experience ===
+                  'string'
+                    ? data.experience
+                    : undefined,
+
+                bio:
+                  typeof data.bio ===
+                    'string' &&
+                  data.bio.trim()
+                    ? data.bio
+                    : 'Local service provider on WorkShake.',
+
+                verified:
+                  typeof data.verified ===
+                  'boolean'
+                    ? data.verified
+                    : false,
+
+                rating: Number(
+                  averageRating.toFixed(1),
+                ),
+
+                reviews:
+                  providerReviews.length,
+
+                jobs: completedJobs,
+
+                skills:
+                  Array.isArray(
+                    data.skills,
+                  )
+                    ? data.skills.filter(
+                        (
+                          skill,
+                        ): skill is string =>
+                          typeof skill ===
+                          'string',
+                      )
+                    : undefined,
+
+                responseTime:
+                  typeof data.responseTime ===
+                  'string'
+                    ? data.responseTime
+                    : undefined,
+
+                startingPrice:
+                  typeof data.startingPrice ===
+                  'number'
+                    ? data.startingPrice
+                    : undefined,
+              }
+            },
+          )
+
+        setProviders(liveProviders)
+      } catch (err) {
+        console.error(
+          'Could not load providers:',
+          err,
+        )
+
+        setProvidersError(
+          err instanceof Error
+            ? err.message
+            : 'Could not load providers.',
+        )
+      } finally {
+        setLoadingProviders(false)
+      }
+    }
+
+    void loadProviders()
+  }, [])
+
   const filteredJobs = useMemo(() => {
     const q =
-      searchQuery.trim().toLowerCase()
+      searchQuery
+        .trim()
+        .toLowerCase()
 
     return jobs.filter((job) => {
       const searchableText = [
@@ -196,7 +482,8 @@ export default function FindHelpPage() {
 
       const matchesCategory =
         category === 'all' ||
-        job.categorySlug === category
+        job.categorySlug ===
+          category
 
       return (
         matchesSearch &&
@@ -209,45 +496,47 @@ export default function FindHelpPage() {
     category,
   ])
 
-  const filteredProviders = useMemo(() => {
-    const q =
-      searchQuery.trim().toLowerCase()
-
-    return providers.filter(
-      (provider) => {
-        const searchableText = [
-          provider.name,
-          provider.category,
-          ...provider.skills,
-        ]
-          .join(' ')
+  const filteredProviders =
+    useMemo(() => {
+      const q =
+        searchQuery
+          .trim()
           .toLowerCase()
 
-        const matchesSearch =
-          !q ||
-          searchableText.includes(q)
+      return providers.filter(
+        (provider) => {
+          const searchableText = [
+            provider.name,
+            provider.category,
+            provider.location,
+            provider.experience ?? '',
+            provider.bio,
+            ...(provider.skills ??
+              []),
+          ]
+            .join(' ')
+            .toLowerCase()
 
-        const providerCategory =
-          categories.find(
-            (item) =>
-              item.name ===
-              provider.category,
-          )?.slug
+          const matchesSearch =
+            !q ||
+            searchableText.includes(q)
 
-        const matchesCategory =
-          category === 'all' ||
-          providerCategory === category
+          const matchesCategory =
+            category === 'all' ||
+            provider.categorySlug ===
+              category
 
-        return (
-          matchesSearch &&
-          matchesCategory
-        )
-      },
-    )
-  }, [
-    searchQuery,
-    category,
-  ])
+          return (
+            matchesSearch &&
+            matchesCategory
+          )
+        },
+      )
+    }, [
+      providers,
+      searchQuery,
+      category,
+    ])
 
   function update(
     key: string,
@@ -274,6 +563,16 @@ export default function FindHelpPage() {
       ? filteredJobs.length
       : filteredProviders.length
 
+  const loading =
+    mode === 'jobs'
+      ? loadingJobs
+      : loadingProviders
+
+  const error =
+    mode === 'jobs'
+      ? jobsError
+      : providersError
+
   return (
     <div className="page-shell">
       <SEO
@@ -288,13 +587,15 @@ export default function FindHelpPage() {
         </p>
 
         <h1 className="mt-3 text-4xl font-black tracking-[-.05em] text-ink sm:text-5xl">
-          Find the right help without the runaround.
+          Find the right help without
+          the runaround.
         </h1>
 
         <p className="mt-4 text-lg leading-8 text-forest/80">
           Search jobs if you offer a
-          service, or switch to providers
-          if you need someone for a task.
+          service, or switch to
+          providers if you need someone
+          for a task.
         </p>
       </div>
 
@@ -318,7 +619,7 @@ export default function FindHelpPage() {
             placeholder={
               mode === 'jobs'
                 ? 'Search jobs, services or locations'
-                : 'Search providers or skills'
+                : 'Search providers, services or locations'
             }
           />
         </label>
@@ -398,7 +699,7 @@ export default function FindHelpPage() {
           <p className="mt-1 text-sm font-bold text-forest/60">
             {mode === 'jobs'
               ? 'Live customer requests currently available on WorkShake.'
-              : 'Browse people offering services on WorkShake.'}
+              : 'Browse approved local service providers on WorkShake.'}
           </p>
         </div>
 
@@ -414,39 +715,31 @@ export default function FindHelpPage() {
         )}
       </div>
 
-      {mode === 'jobs' &&
-        loadingJobs && (
-          <div className="mt-5 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map(
-              (item) => (
-                <div
-                  key={item}
-                  className="skeleton h-64 rounded-[2rem]"
-                />
-              ),
-            )}
-          </div>
-        )}
+      {loading && (
+        <div className="mt-5 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map(
+            (item) => (
+              <div
+                key={item}
+                className="skeleton h-64 rounded-[2rem]"
+              />
+            ),
+          )}
+        </div>
+      )}
 
-      {mode === 'jobs' &&
-        !loadingJobs &&
-        jobsError && (
+      {!loading &&
+        error && (
           <div
             className="mt-5 rounded-2xl bg-sun p-4 text-sm font-bold text-ink"
             role="alert"
           >
-            {jobsError}
+            {error}
           </div>
         )}
 
-      {!(
-        mode === 'jobs' &&
-        loadingJobs
-      ) &&
-        !(
-          mode === 'jobs' &&
-          jobsError
-        ) && (
+      {!loading &&
+        !error && (
           <>
             <div className="mt-4">
               <p className="text-sm font-bold text-forest/65">
@@ -469,10 +762,16 @@ export default function FindHelpPage() {
                       ),
                     )
                   : filteredProviders.map(
-                      (provider) => (
+                      (
+                        provider,
+                      ) => (
                         <ProviderCard
-                          key={provider.id}
-                          provider={provider}
+                          key={
+                            provider.id
+                          }
+                          provider={
+                            provider
+                          }
                         />
                       ),
                     )}
@@ -486,9 +785,9 @@ export default function FindHelpPage() {
                 </p>
 
                 <p className="mt-1 text-sm leading-6 text-forest/65">
-                  Try another keyword or
-                  category, or clear your
-                  current filters.
+                  {mode === 'jobs'
+                    ? 'Try another keyword or category, or clear your current filters.'
+                    : 'Approved provider profiles will appear here once they have been published.'}
                 </p>
               </div>
             )}

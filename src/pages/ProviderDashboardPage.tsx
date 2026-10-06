@@ -7,6 +7,7 @@ import {
   MapPin,
   MessageSquareText,
   Star,
+  X,
 } from 'lucide-react'
 import {
   collection,
@@ -19,7 +20,11 @@ import {
   where,
   type Timestamp,
 } from 'firebase/firestore'
-import { useEffect, useMemo, useState } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import { Link } from 'react-router-dom'
 import { JobCard } from '../components/JobCard'
 import { SEO } from '../components/SEO'
@@ -58,6 +63,7 @@ type ProviderBooking = {
   date?: string
   time?: string
   location?: string
+  note?: string
   status?: string
   createdAt?: Timestamp | null
 }
@@ -67,8 +73,16 @@ type ProviderReview = {
   rating: number
 }
 
+type BookingStatus =
+  | 'Confirmed'
+  | 'Declined'
+  | 'In progress'
+  | 'Completed'
+
 function formatLocation(value?: string) {
-  if (!value) return 'Location in job details'
+  if (!value) {
+    return 'Location in job details'
+  }
 
   return value
     .replace(/\s+,/g, ',')
@@ -78,25 +92,40 @@ function formatLocation(value?: string) {
 }
 
 function formatDate(value?: string) {
-  if (!value) return 'Date to confirm'
+  if (!value) {
+    return 'Date to confirm'
+  }
 
-  const [year, month, day] = value.split('-').map(Number)
+  const [year, month, day] =
+    value.split('-').map(Number)
 
   if (!year || !month || !day) {
     return value
   }
 
-  return new Intl.DateTimeFormat('en-ZW', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(year, month - 1, day))
+  return new Intl.DateTimeFormat(
+    'en-ZW',
+    {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    },
+  ).format(
+    new Date(
+      year,
+      month - 1,
+      day,
+    ),
+  )
 }
 
 function formatTime(value?: string) {
-  if (!value) return 'Time to confirm'
+  if (!value) {
+    return 'Time to confirm'
+  }
 
-  const [hours, minutes] = value.split(':').map(Number)
+  const [hours, minutes] =
+    value.split(':').map(Number)
 
   if (
     Number.isNaN(hours) ||
@@ -106,31 +135,53 @@ function formatTime(value?: string) {
   }
 
   const date = new Date()
-  date.setHours(hours, minutes, 0, 0)
 
-  return new Intl.DateTimeFormat('en-ZW', {
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(date)
+  date.setHours(
+    hours,
+    minutes,
+    0,
+    0,
+  )
+
+  return new Intl.DateTimeFormat(
+    'en-ZW',
+    {
+      hour: 'numeric',
+      minute: '2-digit',
+    },
+  ).format(date)
 }
 
 export default function ProviderDashboardPage() {
   const { user } = useAuth()
 
-  const [jobs, setJobs] = useState<FirestoreJob[]>([])
-  const [bookings, setBookings] = useState<ProviderBooking[]>([])
-  const [reviews, setReviews] = useState<ProviderReview[]>([])
+  const [jobs, setJobs] =
+    useState<FirestoreJob[]>([])
 
-  const [providerCategory, setProviderCategory] =
-    useState<string | null>(null)
+  const [bookings, setBookings] =
+    useState<ProviderBooking[]>([])
 
-  const [loading, setLoading] = useState(true)
+  const [reviews, setReviews] =
+    useState<ProviderReview[]>([])
 
-  const [updatingBookingId, setUpdatingBookingId] =
-    useState<string | null>(null)
+  const [
+    providerCategory,
+    setProviderCategory,
+  ] = useState<string | null>(null)
 
-  const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
+  const [loading, setLoading] =
+    useState(true)
+
+  const [
+    updatingBookingId,
+    setUpdatingBookingId,
+  ] = useState<string | null>(null)
+
+  const [error, setError] =
+    useState('')
+
+  const [message, setMessage] =
+    useState('')
 
   useEffect(() => {
     async function loadDashboard() {
@@ -152,19 +203,26 @@ export default function ProviderDashboardPage() {
         const applicationSnapshot =
           await getDoc(applicationRef)
 
-        let categorySlug: string | null = null
+        let categorySlug:
+          | string
+          | null = null
 
-        if (applicationSnapshot.exists()) {
+        if (
+          applicationSnapshot.exists()
+        ) {
           const applicationData =
             applicationSnapshot.data() as ProviderApplication
 
           if (
-            typeof applicationData.categorySlug === 'string'
+            typeof applicationData.categorySlug ===
+            'string'
           ) {
             categorySlug =
               applicationData.categorySlug
 
-            setProviderCategory(categorySlug)
+            setProviderCategory(
+              categorySlug,
+            )
           }
         }
 
@@ -174,12 +232,18 @@ export default function ProviderDashboardPage() {
           reviewsSnapshot,
         ] = await Promise.all([
           getDocs(
-            collection(db, 'jobs'),
+            collection(
+              db,
+              'jobs',
+            ),
           ),
 
           getDocs(
             query(
-              collection(db, 'bookings'),
+              collection(
+                db,
+                'bookings',
+              ),
               where(
                 'providerId',
                 '==',
@@ -190,7 +254,10 @@ export default function ProviderDashboardPage() {
 
           getDocs(
             query(
-              collection(db, 'reviews'),
+              collection(
+                db,
+                'reviews',
+              ),
               where(
                 'providerId',
                 '==',
@@ -200,155 +267,204 @@ export default function ProviderDashboardPage() {
           ),
         ])
 
-        const liveJobs: FirestoreJob[] =
+        const liveJobs:
+          FirestoreJob[] =
           jobsSnapshot.docs
-            .map((jobDocument) => {
-              const data = jobDocument.data()
+            .map(
+              (jobDocument) => {
+                const data =
+                  jobDocument.data()
 
-              return {
-                id: jobDocument.id,
+                return {
+                  id:
+                    jobDocument.id,
 
-                title:
-                  typeof data.title === 'string'
-                    ? data.title
-                    : 'Untitled job',
+                  title:
+                    typeof data.title ===
+                    'string'
+                      ? data.title
+                      : 'Untitled job',
 
-                category:
-                  typeof data.category === 'string'
-                    ? data.category
-                    : 'General',
+                  category:
+                    typeof data.category ===
+                    'string'
+                      ? data.category
+                      : 'General',
 
-                categorySlug:
-                  typeof data.categorySlug === 'string'
-                    ? data.categorySlug
-                    : 'other',
+                  categorySlug:
+                    typeof data.categorySlug ===
+                    'string'
+                      ? data.categorySlug
+                      : 'other',
 
-                location:
-                  typeof data.location === 'string'
-                    ? data.location
-                    : '',
+                  location:
+                    typeof data.location ===
+                    'string'
+                      ? data.location
+                      : '',
 
-                description:
-                  typeof data.description === 'string'
-                    ? data.description
-                    : '',
+                  description:
+                    typeof data.description ===
+                    'string'
+                      ? data.description
+                      : '',
 
-                timing:
-                  typeof data.timing === 'string'
-                    ? data.timing
-                    : 'Flexible',
+                  timing:
+                    typeof data.timing ===
+                    'string'
+                      ? data.timing
+                      : 'Flexible',
 
-                budgetMin:
-                  typeof data.budgetMin === 'number'
-                    ? data.budgetMin
-                    : 0,
+                  budgetMin:
+                    typeof data.budgetMin ===
+                    'number'
+                      ? data.budgetMin
+                      : 0,
 
-                budgetMax:
-                  typeof data.budgetMax === 'number'
-                    ? data.budgetMax
-                    : 0,
+                  budgetMax:
+                    typeof data.budgetMax ===
+                    'number'
+                      ? data.budgetMax
+                      : 0,
 
-                status:
-                  typeof data.status === 'string'
-                    ? data.status
-                    : 'Open',
+                  status:
+                    typeof data.status ===
+                    'string'
+                      ? data.status
+                      : 'Open',
 
-                createdBy:
-                  typeof data.createdBy === 'string'
-                    ? data.createdBy
-                    : '',
+                  createdBy:
+                    typeof data.createdBy ===
+                    'string'
+                      ? data.createdBy
+                      : '',
 
-                createdAt:
-                  data.createdAt &&
-                  typeof data.createdAt.toDate === 'function'
-                    ? (data.createdAt as Timestamp)
-                    : null,
-              }
-            })
-            .filter(
-              (job) =>
-                job.status === 'Open',
+                  createdAt:
+                    data.createdAt &&
+                    typeof data.createdAt
+                      .toDate ===
+                      'function'
+                      ? (data.createdAt as Timestamp)
+                      : null,
+                }
+              },
             )
             .filter(
               (job) =>
-                job.createdBy !== user.uid,
+                job.status ===
+                'Open',
+            )
+            .filter(
+              (job) =>
+                job.createdBy !==
+                user.uid,
             )
             .sort((a, b) => {
               const aTime =
-                a.createdAt?.toMillis?.() ?? 0
+                a.createdAt
+                  ?.toMillis?.() ??
+                0
 
               const bTime =
-                b.createdAt?.toMillis?.() ?? 0
+                b.createdAt
+                  ?.toMillis?.() ??
+                0
 
-              return bTime - aTime
+              return (
+                bTime - aTime
+              )
             })
 
-        const providerBookings: ProviderBooking[] =
+        const providerBookings:
+          ProviderBooking[] =
           bookingsSnapshot.docs.map(
-            (bookingDocument) => {
-              const data = bookingDocument.data()
+            (
+              bookingDocument,
+            ) => {
+              const data =
+                bookingDocument.data()
 
               return {
-                id: bookingDocument.id,
+                id:
+                  bookingDocument.id,
 
                 jobId:
-                  typeof data.jobId === 'string'
+                  typeof data.jobId ===
+                  'string'
                     ? data.jobId
                     : undefined,
 
                 title:
-                  typeof data.title === 'string'
+                  typeof data.title ===
+                  'string'
                     ? data.title
                     : 'WorkShake booking',
 
                 customerId:
-                  typeof data.customerId === 'string'
+                  typeof data.customerId ===
+                  'string'
                     ? data.customerId
                     : undefined,
 
                 customerName:
-                  typeof data.customerName === 'string'
+                  typeof data.customerName ===
+                  'string'
                     ? data.customerName
                     : 'Customer',
 
                 providerId:
-                  typeof data.providerId === 'string'
+                  typeof data.providerId ===
+                  'string'
                     ? data.providerId
                     : undefined,
 
                 providerName:
-                  typeof data.providerName === 'string'
+                  typeof data.providerName ===
+                  'string'
                     ? data.providerName
                     : undefined,
 
                 quote:
-                  typeof data.quote === 'number'
+                  typeof data.quote ===
+                  'number'
                     ? data.quote
                     : undefined,
 
                 date:
-                  typeof data.date === 'string'
+                  typeof data.date ===
+                  'string'
                     ? data.date
                     : '',
 
                 time:
-                  typeof data.time === 'string'
+                  typeof data.time ===
+                  'string'
                     ? data.time
                     : '',
 
                 location:
-                  typeof data.location === 'string'
+                  typeof data.location ===
+                  'string'
                     ? data.location
                     : '',
 
+                note:
+                  typeof data.note ===
+                  'string'
+                    ? data.note
+                    : '',
+
                 status:
-                  typeof data.status === 'string'
+                  typeof data.status ===
+                  'string'
                     ? data.status
                     : 'Confirmed',
 
                 createdAt:
                   data.createdAt &&
-                  typeof data.createdAt.toDate === 'function'
+                  typeof data.createdAt
+                    .toDate ===
+                    'function'
                     ? (data.createdAt as Timestamp)
                     : null,
               }
@@ -357,33 +473,51 @@ export default function ProviderDashboardPage() {
 
         providerBookings.sort(
           (a, b) =>
-            (b.createdAt?.toMillis?.() ?? 0) -
-            (a.createdAt?.toMillis?.() ?? 0),
+            (b.createdAt
+              ?.toMillis?.() ??
+              0) -
+            (a.createdAt
+              ?.toMillis?.() ??
+              0),
         )
 
-        const providerReviews: ProviderReview[] =
+        const providerReviews:
+          ProviderReview[] =
           reviewsSnapshot.docs
-            .map((reviewDocument) => {
-              const data = reviewDocument.data()
+            .map(
+              (
+                reviewDocument,
+              ) => {
+                const data =
+                  reviewDocument.data()
 
-              return {
-                id: reviewDocument.id,
+                return {
+                  id:
+                    reviewDocument.id,
 
-                rating:
-                  typeof data.rating === 'number'
-                    ? data.rating
-                    : 0,
-              }
-            })
+                  rating:
+                    typeof data.rating ===
+                    'number'
+                      ? data.rating
+                      : 0,
+                }
+              },
+            )
             .filter(
               (review) =>
-                review.rating >= 1 &&
-                review.rating <= 5,
+                review.rating >=
+                  1 &&
+                review.rating <=
+                  5,
             )
 
         setJobs(liveJobs)
-        setBookings(providerBookings)
-        setReviews(providerReviews)
+        setBookings(
+          providerBookings,
+        )
+        setReviews(
+          providerReviews,
+        )
       } catch (err) {
         console.error(
           'Could not load provider dashboard:',
@@ -403,107 +537,149 @@ export default function ProviderDashboardPage() {
     void loadDashboard()
   }, [user])
 
-  const relevantJobs = useMemo(() => {
-    if (!providerCategory) {
-      return jobs
-    }
+  const relevantJobs =
+    useMemo(() => {
+      if (!providerCategory) {
+        return jobs
+      }
 
-    const matchingJobs = jobs.filter(
-      (job) =>
-        job.categorySlug === providerCategory,
+      const matchingJobs =
+        jobs.filter(
+          (job) =>
+            job.categorySlug ===
+            providerCategory,
+        )
+
+      const otherJobs =
+        jobs.filter(
+          (job) =>
+            job.categorySlug !==
+            providerCategory,
+        )
+
+      return [
+        ...matchingJobs,
+        ...otherJobs,
+      ]
+    }, [
+      jobs,
+      providerCategory,
+    ])
+
+  const pendingBookings =
+    useMemo(
+      () =>
+        bookings.filter(
+          (booking) =>
+            booking.status ===
+            'Pending',
+        ),
+      [bookings],
     )
 
-    const otherJobs = jobs.filter(
-      (job) =>
-        job.categorySlug !== providerCategory,
+  const activeBookings =
+    useMemo(
+      () =>
+        bookings.filter(
+          (booking) =>
+            booking.status ===
+              'Confirmed' ||
+            booking.status ===
+              'In progress',
+        ),
+      [bookings],
     )
 
-    return [
-      ...matchingJobs,
-      ...otherJobs,
-    ]
-  }, [
-    jobs,
-    providerCategory,
-  ])
-
-  const activeBookings = useMemo(
-    () =>
-      bookings.filter(
-        (booking) =>
-          booking.status !== 'Completed' &&
-          booking.status !== 'Cancelled',
-      ),
-    [bookings],
-  )
-
-  const completedBookings = useMemo(
-    () =>
-      bookings.filter(
-        (booking) =>
-          booking.status === 'Completed',
-      ),
-    [bookings],
-  )
-
-  const averageRating = useMemo(() => {
-    if (!reviews.length) {
-      return null
-    }
-
-    const total = reviews.reduce(
-      (sum, review) =>
-        sum + review.rating,
-      0,
+  const completedBookings =
+    useMemo(
+      () =>
+        bookings.filter(
+          (booking) =>
+            booking.status ===
+            'Completed',
+        ),
+      [bookings],
     )
 
-    return total / reviews.length
-  }, [reviews])
+  const averageRating =
+    useMemo(() => {
+      if (!reviews.length) {
+        return null
+      }
 
-  const thisMonthEarnings = useMemo(() => {
-    const now = new Date()
+      const total =
+        reviews.reduce(
+          (
+            sum,
+            review,
+          ) =>
+            sum +
+            review.rating,
+          0,
+        )
 
-    return bookings.reduce(
-      (total, booking) => {
-        if (
-          typeof booking.quote !== 'number'
-        ) {
-          return total
-        }
+      return (
+        total /
+        reviews.length
+      )
+    }, [reviews])
 
-        const created =
-          booking.createdAt?.toDate?.()
+  const thisMonthEarnings =
+    useMemo(() => {
+      const now = new Date()
 
-        if (!created) {
-          return total
-        }
+      return bookings.reduce(
+        (
+          total,
+          booking,
+        ) => {
+          if (
+            booking.status !==
+              'Completed' ||
+            typeof booking.quote !==
+              'number'
+          ) {
+            return total
+          }
 
-        const sameMonth =
-          created.getMonth() ===
-            now.getMonth() &&
-          created.getFullYear() ===
-            now.getFullYear()
+          const created =
+            booking.createdAt
+              ?.toDate?.()
 
-        if (!sameMonth) {
-          return total
-        }
+          if (!created) {
+            return total
+          }
 
-        return total + booking.quote
-      },
-      0,
-    )
-  }, [bookings])
+          const sameMonth =
+            created.getMonth() ===
+              now.getMonth() &&
+            created.getFullYear() ===
+              now.getFullYear()
+
+          if (!sameMonth) {
+            return total
+          }
+
+          return (
+            total +
+            booking.quote
+          )
+        },
+        0,
+      )
+    }, [bookings])
 
   async function updateBookingStatus(
     booking: ProviderBooking,
-    nextStatus:
-      | 'In progress'
-      | 'Completed',
+    nextStatus: BookingStatus,
   ) {
-    if (!db || !user) return
+    if (!db || !user) {
+      return
+    }
 
     if (
-      booking.providerId !== user.uid
+      booking.providerId !==
+      user.uid
     ) {
       setError(
         'You cannot update this booking.',
@@ -532,22 +708,47 @@ export default function ProviderDashboardPage() {
         },
       )
 
-      setBookings((current) =>
-        current.map((item) =>
-          item.id === booking.id
-            ? {
-                ...item,
-                status: nextStatus,
-              }
-            : item,
-        ),
+      setBookings(
+        (current) =>
+          current.map(
+            (item) =>
+              item.id ===
+              booking.id
+                ? {
+                    ...item,
+                    status:
+                      nextStatus,
+                  }
+                : item,
+          ),
       )
 
-      setMessage(
-        nextStatus === 'In progress'
-          ? 'The booking is now marked as in progress.'
-          : 'The booking has been marked as completed.',
-      )
+      if (
+        nextStatus ===
+        'Confirmed'
+      ) {
+        setMessage(
+          'Booking accepted. It is now confirmed.',
+        )
+      } else if (
+        nextStatus ===
+        'Declined'
+      ) {
+        setMessage(
+          'Booking request declined.',
+        )
+      } else if (
+        nextStatus ===
+        'In progress'
+      ) {
+        setMessage(
+          'The booking is now marked as in progress.',
+        )
+      } else {
+        setMessage(
+          'The booking has been marked as completed.',
+        )
+      }
     } catch (err) {
       console.error(
         'Could not update booking status:',
@@ -560,14 +761,18 @@ export default function ProviderDashboardPage() {
           : 'Could not update booking status.',
       )
     } finally {
-      setUpdatingBookingId(null)
+      setUpdatingBookingId(
+        null,
+      )
     }
   }
 
   const ratingValue =
     averageRating === null
       ? '—'
-      : averageRating.toFixed(1)
+      : averageRating.toFixed(
+          1,
+        )
 
   const ratingLabel =
     reviews.length === 0
@@ -595,15 +800,19 @@ export default function ProviderDashboardPage() {
             Ready for the next job
             {user?.displayName
               ? `, ${
-                  user.displayName.split(' ')[0]
+                  user.displayName.split(
+                    ' ',
+                  )[0]
                 }`
               : ''}
             ?
           </h1>
 
           <p className="mt-2 text-forest/70">
-            Manage your confirmed work,
-            customer conversations and new
+            Manage booking
+            requests, confirmed
+            work, customer
+            conversations and new
             local opportunities.
           </p>
         </div>
@@ -657,7 +866,9 @@ export default function ProviderDashboardPage() {
           <Check className="h-5 w-5" />
 
           <p className="mt-4 text-3xl font-black">
-            {completedBookings.length}
+            {
+              completedBookings.length
+            }
           </p>
 
           <p className="text-sm text-forest/70">
@@ -691,12 +902,197 @@ export default function ProviderDashboardPage() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h2 className="text-2xl font-black">
+              Booking requests
+            </h2>
+
+            <p className="mt-1 text-sm text-forest/65">
+              New direct booking
+              requests from customers
+              appear here for you to
+              accept or decline.
+            </p>
+          </div>
+
+          {!loading &&
+            pendingBookings.length >
+              0 && (
+              <span className="status-pill">
+                {
+                  pendingBookings.length
+                }{' '}
+                pending
+              </span>
+            )}
+        </div>
+
+        {loading ? (
+          <div className="mt-5 max-w-3xl">
+            <div className="skeleton h-64 rounded-[2rem]" />
+          </div>
+        ) : pendingBookings.length >
+          0 ? (
+          <div className="mt-5 grid gap-5 xl:grid-cols-2">
+            {pendingBookings.map(
+              (booking) => {
+                const updating =
+                  updatingBookingId ===
+                  booking.id
+
+                return (
+                  <article
+                    key={booking.id}
+                    className="rounded-[2rem] border border-forest/10 bg-mist p-5 shadow-soft"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-[.16em] text-olive">
+                          New booking request
+                        </p>
+
+                        <h3 className="mt-2 text-xl font-black tracking-[-.02em] text-ink">
+                          {booking.title ||
+                            'WorkShake booking'}
+                        </h3>
+
+                        <p className="mt-1 text-sm text-forest/65">
+                          from{' '}
+                          <span className="font-bold text-ink">
+                            {booking.customerName ||
+                              'Customer'}
+                          </span>
+                        </p>
+                      </div>
+
+                      <span className="status-pill inline-flex min-h-8 items-center justify-center px-3 leading-none">
+                        Pending
+                      </span>
+                    </div>
+
+                    {booking.note && (
+                      <div className="mt-4 rounded-2xl bg-sage/25 p-4">
+                        <p className="text-xs font-black uppercase tracking-[.12em] text-forest/55">
+                          Customer details
+                        </p>
+
+                        <p className="mt-2 text-sm leading-6 text-forest/80">
+                          {booking.note}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="mt-5 space-y-3 rounded-2xl bg-sage/30 p-4 text-sm">
+                      <div className="grid grid-cols-[22px_80px_1fr] items-center gap-2 text-forest/80">
+                        <CalendarDays className="h-4 w-4 text-forest/55" />
+
+                        <span className="font-bold text-forest/65">
+                          Date
+                        </span>
+
+                        <span>
+                          {formatDate(
+                            booking.date,
+                          )}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-[22px_80px_1fr] items-center gap-2 text-forest/80">
+                        <Clock3 className="h-4 w-4 text-forest/55" />
+
+                        <span className="font-bold text-forest/65">
+                          Time
+                        </span>
+
+                        <span>
+                          {formatTime(
+                            booking.time,
+                          )}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-[22px_80px_1fr] items-center gap-2 text-forest/80">
+                        <MapPin className="h-4 w-4 text-forest/55" />
+
+                        <span className="font-bold text-forest/65">
+                          Location
+                        </span>
+
+                        <span>
+                          {formatLocation(
+                            booking.location,
+                          )}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-3 border-t border-forest/10 pt-4">
+                      <button
+                        type="button"
+                        disabled={
+                          updating
+                        }
+                        onClick={() =>
+                          void updateBookingStatus(
+                            booking,
+                            'Confirmed',
+                          )
+                        }
+                        className="btn-primary inline-flex h-10 items-center justify-center gap-2 px-4 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <Check className="h-4 w-4" />
+
+                        {updating
+                          ? 'Updating…'
+                          : 'Accept booking'}
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={
+                          updating
+                        }
+                        onClick={() =>
+                          void updateBookingStatus(
+                            booking,
+                            'Declined',
+                          )
+                        }
+                        className="btn-secondary inline-flex h-10 items-center justify-center gap-2 px-4 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <X className="h-4 w-4" />
+                        Decline
+                      </button>
+                    </div>
+                  </article>
+                )
+              },
+            )}
+          </div>
+        ) : (
+          <div className="mt-5 max-w-3xl rounded-[2rem] border border-dashed border-forest/25 p-6">
+            <p className="font-black">
+              No pending requests.
+            </p>
+
+            <p className="mt-1 text-sm text-forest/70">
+              New direct booking
+              requests will appear
+              here.
+            </p>
+          </div>
+        )}
+      </section>
+
+      <section className="mt-12">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-black">
               Your active bookings
             </h2>
 
             <p className="mt-1 text-sm text-forest/65">
-              Confirmed customer work and
-              scheduled services appear here.
+              Confirmed customer
+              work and services in
+              progress appear here.
             </p>
           </div>
 
@@ -729,10 +1125,6 @@ export default function ProviderDashboardPage() {
                       )}`
                     : '/messages'
 
-                const scheduled =
-                  Boolean(booking.date) &&
-                  Boolean(booking.time)
-
                 return (
                   <article
                     key={booking.id}
@@ -759,8 +1151,7 @@ export default function ProviderDashboardPage() {
                       </div>
 
                       <span className="status-pill inline-flex min-h-8 items-center justify-center px-3 leading-none">
-                        {booking.status ||
-                          'Confirmed'}
+                        {booking.status}
                       </span>
                     </div>
 
@@ -768,11 +1159,9 @@ export default function ProviderDashboardPage() {
                       <div className="space-y-3 text-sm">
                         <div className="grid grid-cols-[22px_80px_1fr] items-center gap-2 text-forest/80">
                           <CalendarDays className="h-4 w-4 text-forest/55" />
-
                           <span className="font-bold text-forest/65">
                             Date
                           </span>
-
                           <span>
                             {formatDate(
                               booking.date,
@@ -782,11 +1171,9 @@ export default function ProviderDashboardPage() {
 
                         <div className="grid grid-cols-[22px_80px_1fr] items-center gap-2 text-forest/80">
                           <Clock3 className="h-4 w-4 text-forest/55" />
-
                           <span className="font-bold text-forest/65">
                             Time
                           </span>
-
                           <span>
                             {formatTime(
                               booking.time,
@@ -796,11 +1183,9 @@ export default function ProviderDashboardPage() {
 
                         <div className="grid grid-cols-[22px_80px_1fr] items-center gap-2 text-forest/80">
                           <MapPin className="h-4 w-4 text-forest/55" />
-
                           <span className="font-bold text-forest/65">
                             Location
                           </span>
-
                           <span>
                             {formatLocation(
                               booking.location,
@@ -809,14 +1194,18 @@ export default function ProviderDashboardPage() {
                         </div>
                       </div>
 
-                      {typeof booking.quote === 'number' && (
+                      {typeof booking.quote ===
+                        'number' && (
                         <div className="mt-4 flex items-center justify-between border-t border-forest/10 pt-3">
                           <span className="text-sm font-bold text-forest/65">
                             Agreed quote
                           </span>
 
                           <span className="text-lg font-black text-ink">
-                            ${booking.quote}
+                            $
+                            {
+                              booking.quote
+                            }
                           </span>
                         </div>
                       )}
@@ -824,7 +1213,9 @@ export default function ProviderDashboardPage() {
 
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-forest/10 pt-4">
                       <Link
-                        to={conversationUrl}
+                        to={
+                          conversationUrl
+                        }
                         className="btn-secondary inline-flex h-10 items-center justify-center gap-2 px-4 text-center leading-none"
                       >
                         <MessageSquareText className="h-4 w-4" />
@@ -832,17 +1223,20 @@ export default function ProviderDashboardPage() {
                       </Link>
 
                       <div className="flex flex-wrap gap-2">
-                        {booking.status === 'Confirmed' && (
+                        {booking.status ===
+                          'Confirmed' && (
                           <button
                             type="button"
-                            disabled={updating}
+                            disabled={
+                              updating
+                            }
                             onClick={() =>
                               void updateBookingStatus(
                                 booking,
                                 'In progress',
                               )
                             }
-                            className="btn-primary inline-flex h-10 items-center justify-center px-4 text-center leading-none disabled:cursor-not-allowed disabled:opacity-60"
+                            className="btn-primary inline-flex h-10 items-center justify-center px-4 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             {updating
                               ? 'Updating…'
@@ -850,17 +1244,20 @@ export default function ProviderDashboardPage() {
                           </button>
                         )}
 
-                        {booking.status === 'In progress' && (
+                        {booking.status ===
+                          'In progress' && (
                           <button
                             type="button"
-                            disabled={updating}
+                            disabled={
+                              updating
+                            }
                             onClick={() =>
                               void updateBookingStatus(
                                 booking,
                                 'Completed',
                               )
                             }
-                            className="btn-primary inline-flex h-10 items-center justify-center px-4 text-center leading-none disabled:cursor-not-allowed disabled:opacity-60"
+                            className="btn-primary inline-flex h-10 items-center justify-center px-4 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             {updating
                               ? 'Updating…'
@@ -869,13 +1266,6 @@ export default function ProviderDashboardPage() {
                         )}
                       </div>
                     </div>
-
-                    {!scheduled && (
-                      <p className="mt-3 text-xs leading-5 text-forest/50">
-                        The customer has not confirmed a service
-                        schedule yet.
-                      </p>
-                    )}
                   </article>
                 )
               },
@@ -888,7 +1278,9 @@ export default function ProviderDashboardPage() {
             </p>
 
             <p className="mt-1 text-sm text-forest/70">
-              Accepted customer jobs will appear here.
+              Accepted customer
+              bookings will appear
+              here.
             </p>
           </div>
         )}
@@ -901,12 +1293,15 @@ export default function ProviderDashboardPage() {
           </h2>
 
           <p className="mt-1 text-sm text-forest/65">
-            Finished work stays here as part of your service history.
+            Finished work stays
+            here as part of your
+            service history.
           </p>
         </div>
 
         {!loading &&
-          completedBookings.length > 0 && (
+          completedBookings.length >
+            0 && (
             <div className="mt-5 grid gap-4 xl:grid-cols-2">
               {completedBookings.map(
                 (booking) => {
@@ -921,13 +1316,16 @@ export default function ProviderDashboardPage() {
 
                   return (
                     <article
-                      key={booking.id}
+                      key={
+                        booking.id
+                      }
                       className="rounded-[2rem] border border-forest/10 bg-mist p-5"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-4">
                         <div>
                           <p className="text-xs font-black uppercase tracking-[.16em] text-olive">
-                            Completed service
+                            Completed
+                            service
                           </p>
 
                           <h3 className="mt-2 text-xl font-black text-ink">
@@ -980,7 +1378,8 @@ export default function ProviderDashboardPage() {
                           </p>
 
                           <p className="mt-1 font-bold text-ink">
-                            {typeof booking.quote === 'number'
+                            {typeof booking.quote ===
+                            'number'
                               ? `$${booking.quote}`
                               : '—'}
                           </p>
@@ -989,11 +1388,14 @@ export default function ProviderDashboardPage() {
 
                       <div className="mt-4 flex justify-end border-t border-forest/10 pt-4">
                         <Link
-                          to={conversationUrl}
-                          className="btn-secondary inline-flex h-9 items-center justify-center gap-2 px-4 text-center leading-none"
+                          to={
+                            conversationUrl
+                          }
+                          className="btn-secondary inline-flex h-9 items-center justify-center gap-2 px-4"
                         >
                           <MessageSquareText className="h-4 w-4" />
-                          View conversation
+                          View
+                          conversation
                         </Link>
                       </div>
                     </article>
@@ -1004,10 +1406,13 @@ export default function ProviderDashboardPage() {
           )}
 
         {!loading &&
-          completedBookings.length === 0 && (
+          completedBookings.length ===
+            0 && (
             <div className="mt-5 max-w-3xl rounded-[2rem] border border-dashed border-forest/20 p-5">
               <p className="text-sm font-bold text-forest/70">
-                Completed jobs will appear here after you finish them.
+                Completed jobs will
+                appear here after
+                you finish them.
               </p>
             </div>
           )}
@@ -1017,12 +1422,15 @@ export default function ProviderDashboardPage() {
         <div className="flex items-center justify-between gap-5">
           <div>
             <h2 className="text-2xl font-black">
-              Open jobs you may like
+              Open jobs you may
+              like
             </h2>
 
             {providerCategory && (
               <p className="mt-1 text-sm text-forest/65">
-                Jobs matching your service category are shown first.
+                Jobs matching your
+                service category
+                are shown first.
               </p>
             )}
           </div>
@@ -1037,17 +1445,20 @@ export default function ProviderDashboardPage() {
 
         {loading && (
           <div className="mt-5 grid gap-5 lg:grid-cols-3">
-            {[1, 2, 3].map((item) => (
-              <div
-                key={item}
-                className="skeleton h-64 rounded-[2rem]"
-              />
-            ))}
+            {[1, 2, 3].map(
+              (item) => (
+                <div
+                  key={item}
+                  className="skeleton h-64 rounded-[2rem]"
+                />
+              ),
+            )}
           </div>
         )}
 
         {!loading &&
-          relevantJobs.length > 0 && (
+          relevantJobs.length >
+            0 && (
             <div className="mt-5 grid gap-5 lg:grid-cols-3">
               {relevantJobs
                 .slice(0, 3)
@@ -1061,14 +1472,18 @@ export default function ProviderDashboardPage() {
           )}
 
         {!loading &&
-          relevantJobs.length === 0 && (
+          relevantJobs.length ===
+            0 && (
             <div className="mt-5 rounded-[2rem] border border-dashed border-forest/25 p-6">
               <p className="font-black">
                 No open jobs yet.
               </p>
 
               <p className="mt-1 text-sm text-forest/70">
-                New customer requests will appear here when they are posted.
+                New customer
+                requests will
+                appear here when
+                they are posted.
               </p>
             </div>
           )}

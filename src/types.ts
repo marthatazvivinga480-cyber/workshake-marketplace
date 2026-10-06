@@ -9,18 +9,29 @@ export type ServiceCategory = {
 
 export type Provider = {
   id: string
+
+  // Firestore provider identity
+  userId?: string
+
+  // Public provider information
   name: string
   initials: string
   category: string
+  categorySlug?: string
   location: string
+  experience?: string
+  bio: string
+
+  // Trust and marketplace activity
+  verified: boolean
   rating: number
   reviews: number
   jobs: number
-  responseTime: string
-  verified: boolean
-  bio: string
-  skills: string[]
-  startingPrice: number
+
+  // Optional profile information
+  skills?: string[]
+  responseTime?: string
+  startingPrice?: number
 }
 
 export type Job = {
