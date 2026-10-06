@@ -79,7 +79,9 @@ type BookingStatus =
   | 'In progress'
   | 'Completed'
 
-function formatLocation(value?: string) {
+function formatLocation(
+  value?: string,
+) {
   if (!value) {
     return 'Location in job details'
   }
@@ -87,19 +89,36 @@ function formatLocation(value?: string) {
   return value
     .replace(/\s+,/g, ',')
     .replace(/,\s*/g, ', ')
-    .replace(/\bharare\b/gi, 'Harare')
-    .replace(/\bbelvedere\b/gi, 'Belvedere')
+    .replace(
+      /\bharare\b/gi,
+      'Harare',
+    )
+    .replace(
+      /\bbelvedere\b/gi,
+      'Belvedere',
+    )
 }
 
-function formatDate(value?: string) {
+function formatDate(
+  value?: string,
+) {
   if (!value) {
     return 'Date to confirm'
   }
 
-  const [year, month, day] =
-    value.split('-').map(Number)
+  const [
+    year,
+    month,
+    day,
+  ] = value
+    .split('-')
+    .map(Number)
 
-  if (!year || !month || !day) {
+  if (
+    !year ||
+    !month ||
+    !day
+  ) {
     return value
   }
 
@@ -119,13 +138,19 @@ function formatDate(value?: string) {
   )
 }
 
-function formatTime(value?: string) {
+function formatTime(
+  value?: string,
+) {
   if (!value) {
     return 'Time to confirm'
   }
 
-  const [hours, minutes] =
-    value.split(':').map(Number)
+  const [
+    hours,
+    minutes,
+  ] = value
+    .split(':')
+    .map(Number)
 
   if (
     Number.isNaN(hours) ||
@@ -152,40 +177,99 @@ function formatTime(value?: string) {
   ).format(date)
 }
 
+function isAllowedTransition(
+  currentStatus: string | undefined,
+  nextStatus: BookingStatus,
+) {
+  if (
+    currentStatus === 'Pending'
+  ) {
+    return (
+      nextStatus === 'Confirmed' ||
+      nextStatus === 'Declined'
+    )
+  }
+
+  if (
+    currentStatus === 'Confirmed'
+  ) {
+    return (
+      nextStatus === 'In progress'
+    )
+  }
+
+  if (
+    currentStatus === 'In progress'
+  ) {
+    return (
+      nextStatus === 'Completed'
+    )
+  }
+
+  return false
+}
+
 export default function ProviderDashboardPage() {
   const { user } = useAuth()
 
-  const [jobs, setJobs] =
+  const [
+    jobs,
+    setJobs,
+  ] =
     useState<FirestoreJob[]>([])
 
-  const [bookings, setBookings] =
+  const [
+    bookings,
+    setBookings,
+  ] =
     useState<ProviderBooking[]>([])
 
-  const [reviews, setReviews] =
+  const [
+    reviews,
+    setReviews,
+  ] =
     useState<ProviderReview[]>([])
 
   const [
     providerCategory,
     setProviderCategory,
-  ] = useState<string | null>(null)
+  ] =
+    useState<string | null>(
+      null,
+    )
 
-  const [loading, setLoading] =
+  const [
+    loading,
+    setLoading,
+  ] =
     useState(true)
 
   const [
     updatingBookingId,
     setUpdatingBookingId,
-  ] = useState<string | null>(null)
+  ] =
+    useState<string | null>(
+      null,
+    )
 
-  const [error, setError] =
+  const [
+    error,
+    setError,
+  ] =
     useState('')
 
-  const [message, setMessage] =
+  const [
+    message,
+    setMessage,
+  ] =
     useState('')
 
   useEffect(() => {
     async function loadDashboard() {
-      if (!db || !user) {
+      if (
+        !db ||
+        !user
+      ) {
         setLoading(false)
         return
       }
@@ -194,14 +278,17 @@ export default function ProviderDashboardPage() {
       setError('')
 
       try {
-        const applicationRef = doc(
-          db,
-          'providerApplications',
-          user.uid,
-        )
+        const applicationRef =
+          doc(
+            db,
+            'providerApplications',
+            user.uid,
+          )
 
         const applicationSnapshot =
-          await getDoc(applicationRef)
+          await getDoc(
+            applicationRef,
+          )
 
         let categorySlug:
           | string
@@ -230,48 +317,51 @@ export default function ProviderDashboardPage() {
           jobsSnapshot,
           bookingsSnapshot,
           reviewsSnapshot,
-        ] = await Promise.all([
-          getDocs(
-            collection(
-              db,
-              'jobs',
-            ),
-          ),
-
-          getDocs(
-            query(
+        ] =
+          await Promise.all([
+            getDocs(
               collection(
                 db,
-                'bookings',
-              ),
-              where(
-                'providerId',
-                '==',
-                user.uid,
+                'jobs',
               ),
             ),
-          ),
 
-          getDocs(
-            query(
-              collection(
-                db,
-                'reviews',
-              ),
-              where(
-                'providerId',
-                '==',
-                user.uid,
+            getDocs(
+              query(
+                collection(
+                  db,
+                  'bookings',
+                ),
+                where(
+                  'providerId',
+                  '==',
+                  user.uid,
+                ),
               ),
             ),
-          ),
-        ])
+
+            getDocs(
+              query(
+                collection(
+                  db,
+                  'reviews',
+                ),
+                where(
+                  'providerId',
+                  '==',
+                  user.uid,
+                ),
+              ),
+            ),
+          ])
 
         const liveJobs:
           FirestoreJob[] =
           jobsSnapshot.docs
             .map(
-              (jobDocument) => {
+              (
+                jobDocument,
+              ) => {
                 const data =
                   jobDocument.data()
 
@@ -359,127 +449,121 @@ export default function ProviderDashboardPage() {
                 job.createdBy !==
                 user.uid,
             )
-            .sort((a, b) => {
-              const aTime =
-                a.createdAt
+            .sort(
+              (a, b) =>
+                (b.createdAt
                   ?.toMillis?.() ??
-                0
-
-              const bTime =
-                b.createdAt
+                  0) -
+                (a.createdAt
                   ?.toMillis?.() ??
-                0
-
-              return (
-                bTime - aTime
-              )
-            })
+                  0),
+            )
 
         const providerBookings:
           ProviderBooking[] =
-          bookingsSnapshot.docs.map(
-            (
-              bookingDocument,
-            ) => {
-              const data =
-                bookingDocument.data()
+          bookingsSnapshot.docs
+            .map(
+              (
+                bookingDocument,
+              ) => {
+                const data =
+                  bookingDocument.data()
 
-              return {
-                id:
-                  bookingDocument.id,
+                return {
+                  id:
+                    bookingDocument.id,
 
-                jobId:
-                  typeof data.jobId ===
-                  'string'
-                    ? data.jobId
-                    : undefined,
+                  jobId:
+                    typeof data.jobId ===
+                    'string'
+                      ? data.jobId
+                      : undefined,
 
-                title:
-                  typeof data.title ===
-                  'string'
-                    ? data.title
-                    : 'WorkShake booking',
+                  title:
+                    typeof data.title ===
+                    'string'
+                      ? data.title
+                      : 'WorkShake booking',
 
-                customerId:
-                  typeof data.customerId ===
-                  'string'
-                    ? data.customerId
-                    : undefined,
+                  customerId:
+                    typeof data.customerId ===
+                    'string'
+                      ? data.customerId
+                      : undefined,
 
-                customerName:
-                  typeof data.customerName ===
-                  'string'
-                    ? data.customerName
-                    : 'Customer',
+                  customerName:
+                    typeof data.customerName ===
+                    'string'
+                      ? data.customerName
+                      : 'Customer',
 
-                providerId:
-                  typeof data.providerId ===
-                  'string'
-                    ? data.providerId
-                    : undefined,
+                  providerId:
+                    typeof data.providerId ===
+                    'string'
+                      ? data.providerId
+                      : undefined,
 
-                providerName:
-                  typeof data.providerName ===
-                  'string'
-                    ? data.providerName
-                    : undefined,
+                  providerName:
+                    typeof data.providerName ===
+                    'string'
+                      ? data.providerName
+                      : undefined,
 
-                quote:
-                  typeof data.quote ===
-                  'number'
-                    ? data.quote
-                    : undefined,
+                  quote:
+                    typeof data.quote ===
+                    'number'
+                      ? data.quote
+                      : undefined,
 
-                date:
-                  typeof data.date ===
-                  'string'
-                    ? data.date
-                    : '',
+                  date:
+                    typeof data.date ===
+                    'string'
+                      ? data.date
+                      : '',
 
-                time:
-                  typeof data.time ===
-                  'string'
-                    ? data.time
-                    : '',
+                  time:
+                    typeof data.time ===
+                    'string'
+                      ? data.time
+                      : '',
 
-                location:
-                  typeof data.location ===
-                  'string'
-                    ? data.location
-                    : '',
+                  location:
+                    typeof data.location ===
+                    'string'
+                      ? data.location
+                      : '',
 
-                note:
-                  typeof data.note ===
-                  'string'
-                    ? data.note
-                    : '',
+                  note:
+                    typeof data.note ===
+                    'string'
+                      ? data.note
+                      : '',
 
-                status:
-                  typeof data.status ===
-                  'string'
-                    ? data.status
-                    : 'Confirmed',
+                  status:
+                    typeof data.status ===
+                    'string'
+                      ? data.status
+                      : 'Confirmed',
 
-                createdAt:
-                  data.createdAt &&
-                  typeof data.createdAt
-                    .toDate ===
-                    'function'
-                    ? (data.createdAt as Timestamp)
-                    : null,
-              }
-            },
-          )
-
-        providerBookings.sort(
-          (a, b) =>
-            (b.createdAt
-              ?.toMillis?.() ??
-              0) -
-            (a.createdAt
-              ?.toMillis?.() ??
-              0),
-        )
+                  createdAt:
+                    data.createdAt &&
+                    typeof data.createdAt
+                      .toDate ===
+                      'function'
+                      ? (data.createdAt as Timestamp)
+                      : null,
+                }
+              },
+            )
+            .sort(
+              (a, b) =>
+                (b.createdAt
+                  ?.toMillis?.() ??
+                  0) -
+                (a.createdAt
+                  ?.toMillis?.() ??
+                  0),
+            )
 
         const providerReviews:
           ProviderReview[] =
@@ -511,10 +595,14 @@ export default function ProviderDashboardPage() {
                   5,
             )
 
-        setJobs(liveJobs)
+        setJobs(
+          liveJobs,
+        )
+
         setBookings(
           providerBookings,
         )
+
         setReviews(
           providerReviews,
         )
@@ -539,7 +627,9 @@ export default function ProviderDashboardPage() {
 
   const relevantJobs =
     useMemo(() => {
-      if (!providerCategory) {
+      if (
+        !providerCategory
+      ) {
         return jobs
       }
 
@@ -603,7 +693,9 @@ export default function ProviderDashboardPage() {
 
   const averageRating =
     useMemo(() => {
-      if (!reviews.length) {
+      if (
+        !reviews.length
+      ) {
         return null
       }
 
@@ -626,7 +718,8 @@ export default function ProviderDashboardPage() {
 
   const thisMonthEarnings =
     useMemo(() => {
-      const now = new Date()
+      const now =
+        new Date()
 
       return bookings.reduce(
         (
@@ -673,7 +766,10 @@ export default function ProviderDashboardPage() {
     booking: ProviderBooking,
     nextStatus: BookingStatus,
   ) {
-    if (!db || !user) {
+    if (
+      !db ||
+      !user
+    ) {
       return
     }
 
@@ -683,6 +779,18 @@ export default function ProviderDashboardPage() {
     ) {
       setError(
         'You cannot update this booking.',
+      )
+      return
+    }
+
+    if (
+      !isAllowedTransition(
+        booking.status,
+        nextStatus,
+      )
+    ) {
+      setError(
+        'This booking cannot be moved to that status.',
       )
       return
     }
@@ -702,7 +810,9 @@ export default function ProviderDashboardPage() {
           booking.id,
         ),
         {
-          status: nextStatus,
+          status:
+            nextStatus,
+
           updatedAt:
             serverTimestamp(),
         },
@@ -797,7 +907,8 @@ export default function ProviderDashboardPage() {
           </p>
 
           <h1 className="mt-2 text-4xl font-black tracking-[-.05em]">
-            Ready for the next job
+            Ready for the next
+            job
             {user?.displayName
               ? `, ${
                   user.displayName.split(
@@ -830,7 +941,9 @@ export default function ProviderDashboardPage() {
           <BriefcaseBusiness className="h-5 w-5" />
 
           <p className="mt-4 text-3xl font-black">
-            {activeBookings.length}
+            {
+              activeBookings.length
+            }
           </p>
 
           <p className="text-sm text-forest/70">
@@ -842,7 +955,8 @@ export default function ProviderDashboardPage() {
           <CircleDollarSign className="h-5 w-5" />
 
           <p className="mt-4 text-3xl font-black">
-            ${thisMonthEarnings}
+            $
+            {thisMonthEarnings}
           </p>
 
           <p className="text-sm text-forest/70">
@@ -940,13 +1054,16 @@ export default function ProviderDashboardPage() {
 
                 return (
                   <article
-                    key={booking.id}
+                    key={
+                      booking.id
+                    }
                     className="rounded-[2rem] border border-forest/10 bg-mist p-5 shadow-soft"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div>
                         <p className="text-xs font-black uppercase tracking-[.16em] text-olive">
-                          New booking request
+                          New booking
+                          request
                         </p>
 
                         <h3 className="mt-2 text-xl font-black tracking-[-.02em] text-ink">
@@ -971,11 +1088,14 @@ export default function ProviderDashboardPage() {
                     {booking.note && (
                       <div className="mt-4 rounded-2xl bg-sage/25 p-4">
                         <p className="text-xs font-black uppercase tracking-[.12em] text-forest/55">
-                          Customer details
+                          Customer
+                          details
                         </p>
 
                         <p className="mt-2 text-sm leading-6 text-forest/80">
-                          {booking.note}
+                          {
+                            booking.note
+                          }
                         </p>
                       </div>
                     )}
@@ -1127,13 +1247,16 @@ export default function ProviderDashboardPage() {
 
                 return (
                   <article
-                    key={booking.id}
+                    key={
+                      booking.id
+                    }
                     className="rounded-[2rem] border border-forest/10 bg-mist p-5 shadow-soft"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div>
                         <p className="text-xs font-black uppercase tracking-[.16em] text-olive">
-                          Customer booking
+                          Customer
+                          booking
                         </p>
 
                         <h3 className="mt-2 text-xl font-black tracking-[-.02em] text-ink">
@@ -1151,7 +1274,9 @@ export default function ProviderDashboardPage() {
                       </div>
 
                       <span className="status-pill inline-flex min-h-8 items-center justify-center px-3 leading-none">
-                        {booking.status}
+                        {
+                          booking.status
+                        }
                       </span>
                     </div>
 
@@ -1159,9 +1284,11 @@ export default function ProviderDashboardPage() {
                       <div className="space-y-3 text-sm">
                         <div className="grid grid-cols-[22px_80px_1fr] items-center gap-2 text-forest/80">
                           <CalendarDays className="h-4 w-4 text-forest/55" />
+
                           <span className="font-bold text-forest/65">
                             Date
                           </span>
+
                           <span>
                             {formatDate(
                               booking.date,
@@ -1171,9 +1298,11 @@ export default function ProviderDashboardPage() {
 
                         <div className="grid grid-cols-[22px_80px_1fr] items-center gap-2 text-forest/80">
                           <Clock3 className="h-4 w-4 text-forest/55" />
+
                           <span className="font-bold text-forest/65">
                             Time
                           </span>
+
                           <span>
                             {formatTime(
                               booking.time,
@@ -1183,9 +1312,11 @@ export default function ProviderDashboardPage() {
 
                         <div className="grid grid-cols-[22px_80px_1fr] items-center gap-2 text-forest/80">
                           <MapPin className="h-4 w-4 text-forest/55" />
+
                           <span className="font-bold text-forest/65">
                             Location
                           </span>
+
                           <span>
                             {formatLocation(
                               booking.location,
@@ -1198,7 +1329,8 @@ export default function ProviderDashboardPage() {
                         'number' && (
                         <div className="mt-4 flex items-center justify-between border-t border-forest/10 pt-3">
                           <span className="text-sm font-bold text-forest/65">
-                            Agreed quote
+                            Agreed
+                            quote
                           </span>
 
                           <span className="text-lg font-black text-ink">
@@ -1219,7 +1351,8 @@ export default function ProviderDashboardPage() {
                         className="btn-secondary inline-flex h-10 items-center justify-center gap-2 px-4 text-center leading-none"
                       >
                         <MessageSquareText className="h-4 w-4" />
-                        Open conversation
+                        Open
+                        conversation
                       </Link>
 
                       <div className="flex flex-wrap gap-2">
@@ -1462,12 +1595,18 @@ export default function ProviderDashboardPage() {
             <div className="mt-5 grid gap-5 lg:grid-cols-3">
               {relevantJobs
                 .slice(0, 3)
-                .map((job) => (
-                  <JobCard
-                    key={job.id}
-                    job={job}
-                  />
-                ))}
+                .map(
+                  (job) => (
+                    <JobCard
+                      key={
+                        job.id
+                      }
+                      job={
+                        job
+                      }
+                    />
+                  ),
+                )}
             </div>
           )}
 

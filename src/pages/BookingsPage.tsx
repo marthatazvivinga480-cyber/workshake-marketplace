@@ -6,6 +6,7 @@ import {
   serverTimestamp,
   updateDoc,
   where,
+  type Timestamp,
 } from 'firebase/firestore'
 import {
   CalendarDays,
@@ -16,10 +17,7 @@ import {
   Receipt,
   UserRound,
 } from 'lucide-react'
-import {
-  useEffect,
-  useState,
-} from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { SEO } from '../components/SEO'
@@ -39,6 +37,7 @@ type Booking = {
   time?: string
   location?: string
   status?: string
+  createdAt?: Timestamp | null
 }
 
 type ScheduleDraft = {
@@ -46,9 +45,7 @@ type ScheduleDraft = {
   time: string
 }
 
-function formatLocation(
-  value?: string,
-) {
+function formatLocation(value?: string) {
   if (!value) {
     return 'Location in job details'
   }
@@ -56,47 +53,28 @@ function formatLocation(
   return value
     .replace(/\s+,/g, ',')
     .replace(/,\s*/g, ', ')
-    .replace(
-      /\bharare\b/gi,
-      'Harare',
-    )
-    .replace(
-      /\bbelvedere\b/gi,
-      'Belvedere',
-    )
+    .replace(/\bharare\b/gi, 'Harare')
+    .replace(/\bbelvedere\b/gi, 'Belvedere')
 }
 
-function formatDate(
-  value?: string,
-) {
+function formatDate(value?: string) {
   if (!value) {
     return 'Date to confirm'
   }
 
-  const [
-    year,
-    month,
-    day,
-  ] = value
+  const [year, month, day] = value
     .split('-')
     .map(Number)
 
-  if (
-    !year ||
-    !month ||
-    !day
-  ) {
+  if (!year || !month || !day) {
     return value
   }
 
-  return new Intl.DateTimeFormat(
-    'en-ZW',
-    {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    },
-  ).format(
+  return new Intl.DateTimeFormat('en-ZW', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(
     new Date(
       year,
       month - 1,
@@ -105,17 +83,12 @@ function formatDate(
   )
 }
 
-function formatTime(
-  value?: string,
-) {
+function formatTime(value?: string) {
   if (!value) {
     return 'Time to confirm'
   }
 
-  const [
-    hours,
-    minutes,
-  ] = value
+  const [hours, minutes] = value
     .split(':')
     .map(Number)
 
@@ -126,8 +99,7 @@ function formatTime(
     return value
   }
 
-  const date =
-    new Date()
+  const date = new Date()
 
   date.setHours(
     hours,
@@ -136,67 +108,74 @@ function formatTime(
     0,
   )
 
-  return new Intl.DateTimeFormat(
-    'en-ZW',
-    {
-      hour: 'numeric',
-      minute: '2-digit',
-    },
-  ).format(date)
+  return new Intl.DateTimeFormat('en-ZW', {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date)
 }
 
 function getTodayForDateInput() {
-  const today =
-    new Date()
+  const today = new Date()
 
   const year =
     today.getFullYear()
 
   const month = String(
     today.getMonth() + 1,
-  ).padStart(
-    2,
-    '0',
-  )
+  ).padStart(2, '0')
 
   const day = String(
     today.getDate(),
-  ).padStart(
-    2,
-    '0',
-  )
+  ).padStart(2, '0')
 
   return `${year}-${month}-${day}`
 }
 
-function getScheduleMessage(
-  status?: string,
-) {
-  if (
-    status === 'Completed'
-  ) {
+function getScheduleMessage(status?: string) {
+  if (status === 'Completed') {
     return 'This service is complete. The final schedule is kept for your booking history.'
   }
 
-  if (
-    status === 'In progress'
-  ) {
+  if (status === 'In progress') {
     return 'This service is already in progress, so the schedule can no longer be changed.'
   }
 
-  if (
-    status === 'Declined'
-  ) {
+  if (status === 'Declined') {
     return 'This booking was declined, so the schedule can no longer be changed.'
   }
 
-  if (
-    status === 'Cancelled'
-  ) {
+  if (status === 'Cancelled') {
     return 'This booking was cancelled, so the schedule can no longer be changed.'
   }
 
   return 'The confirmed schedule is shared with both the customer and provider.'
+}
+
+function getBookingStatusOrder(
+  status?: string,
+) {
+  switch (status) {
+    case 'Pending':
+      return 0
+
+    case 'Confirmed':
+      return 1
+
+    case 'In progress':
+      return 2
+
+    case 'Completed':
+      return 3
+
+    case 'Declined':
+      return 4
+
+    case 'Cancelled':
+      return 5
+
+    default:
+      return 6
+  }
 }
 
 export default function BookingsPage() {
@@ -208,18 +187,13 @@ export default function BookingsPage() {
   const [
     bookings,
     setBookings,
-  ] = useState<Booking[]>(
-    [],
-  )
+  ] = useState<Booking[]>([])
 
   const [
     drafts,
     setDrafts,
   ] = useState<
-    Record<
-      string,
-      ScheduleDraft
-    >
+    Record<string, ScheduleDraft>
   >({})
 
   const [
@@ -230,9 +204,10 @@ export default function BookingsPage() {
   const [
     savingBookingId,
     setSavingBookingId,
-  ] = useState<
-    string | null
-  >(null)
+  ] =
+    useState<string | null>(
+      null,
+    )
 
   const [
     error,
@@ -246,10 +221,7 @@ export default function BookingsPage() {
 
   useEffect(() => {
     async function loadBookings() {
-      if (
-        !db ||
-        !user
-      ) {
+      if (!db || !user) {
         setLoading(false)
         return
       }
@@ -287,18 +259,15 @@ export default function BookingsPage() {
         const [
           customerSnapshot,
           providerSnapshot,
-        ] =
-          await Promise.all(
-            [
-              getDocs(
-                customerQuery,
-              ),
+        ] = await Promise.all([
+          getDocs(
+            customerQuery,
+          ),
 
-              getDocs(
-                providerQuery,
-              ),
-            ],
-          )
+          getDocs(
+            providerQuery,
+          ),
+        ])
 
         const bookingMap =
           new Map<
@@ -387,6 +356,14 @@ export default function BookingsPage() {
                 'string'
                   ? data.status
                   : 'Confirmed',
+
+              createdAt:
+                data.createdAt &&
+                typeof data.createdAt
+                  .toDate ===
+                  'function'
+                  ? (data.createdAt as Timestamp)
+                  : null,
             },
           )
         }
@@ -394,7 +371,30 @@ export default function BookingsPage() {
         const loadedBookings =
           [
             ...bookingMap.values(),
-          ]
+          ].sort((a, b) => {
+            const statusDifference =
+              getBookingStatusOrder(
+                a.status,
+              ) -
+              getBookingStatusOrder(
+                b.status,
+              )
+
+            if (
+              statusDifference !== 0
+            ) {
+              return statusDifference
+            }
+
+            return (
+              (b.createdAt
+                ?.toMillis?.() ??
+                0) -
+              (a.createdAt
+                ?.toMillis?.() ??
+                0)
+            )
+          })
 
         setBookings(
           loadedBookings,
@@ -459,14 +459,12 @@ export default function BookingsPage() {
           date:
             current[
               bookingId
-            ]?.date ||
-            '',
+            ]?.date || '',
 
           time:
             current[
               bookingId
-            ]?.time ||
-            '',
+            ]?.time || '',
 
           [field]:
             value,
@@ -478,10 +476,7 @@ export default function BookingsPage() {
   async function saveSchedule(
     booking: Booking,
   ) {
-    if (
-      !db ||
-      !user
-    ) {
+    if (!db || !user) {
       return
     }
 
@@ -608,9 +603,8 @@ export default function BookingsPage() {
           </h1>
 
           <p className="mt-3 text-forest/70">
-            Keep track of
-            booking requests,
-            active work and
+            Keep track of booking
+            requests, active work and
             completed services.
           </p>
         </div>
@@ -884,8 +878,7 @@ export default function BookingsPage() {
                         <div className="mt-3 grid gap-3 sm:grid-cols-2">
                           <label className="block">
                             <span className="mb-1.5 block text-xs font-bold text-forest/65">
-                              Service
-                              date
+                              Service date
                             </span>
 
                             <input
@@ -911,8 +904,7 @@ export default function BookingsPage() {
 
                           <label className="block">
                             <span className="mb-1.5 block text-xs font-bold text-forest/65">
-                              Service
-                              time
+                              Service time
                             </span>
 
                             <input
@@ -938,11 +930,10 @@ export default function BookingsPage() {
 
                         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                           <p className="max-w-md text-[11px] leading-5 text-forest/45">
-                            The schedule
-                            is shared
-                            with both
-                            the customer
-                            and provider.
+                            The schedule is
+                            shared with both
+                            the customer and
+                            provider.
                           </p>
 
                           <button
@@ -969,8 +960,7 @@ export default function BookingsPage() {
                       <div className="mt-4 grid gap-3 rounded-2xl bg-sage/25 p-4 sm:grid-cols-2">
                         <div>
                           <p className="text-xs font-bold text-forest/55">
-                            Service
-                            date
+                            Service date
                           </p>
 
                           <p className="mt-1 font-bold text-ink">
@@ -982,8 +972,7 @@ export default function BookingsPage() {
 
                         <div>
                           <p className="text-xs font-bold text-forest/55">
-                            Service
-                            time
+                            Service time
                           </p>
 
                           <p className="mt-1 font-bold text-ink">
