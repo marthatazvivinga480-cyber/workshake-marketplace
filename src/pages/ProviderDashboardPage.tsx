@@ -89,6 +89,7 @@ function formatLocation(
   return value
     .replace(/\s+,/g, ',')
     .replace(/,\s*/g, ', ')
+    .replace(/\s{2,}/g, ' ')
     .replace(
       /\bharare\b/gi,
       'Harare',
@@ -97,6 +98,7 @@ function formatLocation(
       /\bbelvedere\b/gi,
       'Belvedere',
     )
+    .trim()
 }
 
 function formatDate(
@@ -159,7 +161,8 @@ function formatTime(
     return value
   }
 
-  const date = new Date()
+  const date =
+    new Date()
 
   date.setHours(
     hours,
@@ -178,31 +181,40 @@ function formatTime(
 }
 
 function isAllowedTransition(
-  currentStatus: string | undefined,
+  currentStatus:
+    | string
+    | undefined,
   nextStatus: BookingStatus,
 ) {
   if (
-    currentStatus === 'Pending'
+    currentStatus ===
+    'Pending'
   ) {
     return (
-      nextStatus === 'Confirmed' ||
-      nextStatus === 'Declined'
+      nextStatus ===
+        'Confirmed' ||
+      nextStatus ===
+        'Declined'
     )
   }
 
   if (
-    currentStatus === 'Confirmed'
+    currentStatus ===
+    'Confirmed'
   ) {
     return (
-      nextStatus === 'In progress'
+      nextStatus ===
+      'In progress'
     )
   }
 
   if (
-    currentStatus === 'In progress'
+    currentStatus ===
+    'In progress'
   ) {
     return (
-      nextStatus === 'Completed'
+      nextStatus ===
+      'Completed'
     )
   }
 
@@ -210,33 +222,40 @@ function isAllowedTransition(
 }
 
 export default function ProviderDashboardPage() {
-  const { user } = useAuth()
+  const { user } =
+    useAuth()
 
   const [
     jobs,
     setJobs,
   ] =
-    useState<FirestoreJob[]>([])
+    useState<
+      FirestoreJob[]
+    >([])
 
   const [
     bookings,
     setBookings,
   ] =
-    useState<ProviderBooking[]>([])
+    useState<
+      ProviderBooking[]
+    >([])
 
   const [
     reviews,
     setReviews,
   ] =
-    useState<ProviderReview[]>([])
+    useState<
+      ProviderReview[]
+    >([])
 
   const [
     providerCategory,
     setProviderCategory,
   ] =
-    useState<string | null>(
-      null,
-    )
+    useState<
+      string | null
+    >(null)
 
   const [
     loading,
@@ -248,9 +267,9 @@ export default function ProviderDashboardPage() {
     updatingBookingId,
     setUpdatingBookingId,
   ] =
-    useState<string | null>(
-      null,
-    )
+    useState<
+      string | null
+    >(null)
 
   const [
     error,
@@ -390,7 +409,9 @@ export default function ProviderDashboardPage() {
                   location:
                     typeof data.location ===
                     'string'
-                      ? data.location
+                      ? formatLocation(
+                          data.location,
+                        )
                       : '',
 
                   description:
@@ -530,7 +551,9 @@ export default function ProviderDashboardPage() {
                   location:
                     typeof data.location ===
                     'string'
-                      ? data.location
+                      ? formatLocation(
+                          data.location,
+                        )
                       : '',
 
                   note:
@@ -595,8 +618,33 @@ export default function ProviderDashboardPage() {
                   5,
             )
 
+        const providerBookedJobIds =
+          new Set(
+            providerBookings
+              .map(
+                (booking) =>
+                  booking.jobId,
+              )
+              .filter(
+                (
+                  jobId,
+                ): jobId is string =>
+                  Boolean(
+                    jobId,
+                  ),
+              ),
+          )
+
+        const availableJobs =
+          liveJobs.filter(
+            (job) =>
+              !providerBookedJobIds.has(
+                job.id,
+              ),
+          )
+
         setJobs(
-          liveJobs,
+          availableJobs,
         )
 
         setBookings(
@@ -1329,8 +1377,7 @@ export default function ProviderDashboardPage() {
                         'number' && (
                         <div className="mt-4 flex items-center justify-between border-t border-forest/10 pt-3">
                           <span className="text-sm font-bold text-forest/65">
-                            Agreed
-                            quote
+                            Agreed quote
                           </span>
 
                           <span className="text-lg font-black text-ink">
@@ -1351,8 +1398,7 @@ export default function ProviderDashboardPage() {
                         className="btn-secondary inline-flex h-10 items-center justify-center gap-2 px-4 text-center leading-none"
                       >
                         <MessageSquareText className="h-4 w-4" />
-                        Open
-                        conversation
+                        Open conversation
                       </Link>
 
                       <div className="flex flex-wrap gap-2">
@@ -1457,8 +1503,7 @@ export default function ProviderDashboardPage() {
                       <div className="flex flex-wrap items-start justify-between gap-4">
                         <div>
                           <p className="text-xs font-black uppercase tracking-[.16em] text-olive">
-                            Completed
-                            service
+                            Completed service
                           </p>
 
                           <h3 className="mt-2 text-xl font-black text-ink">
@@ -1527,8 +1572,7 @@ export default function ProviderDashboardPage() {
                           className="btn-secondary inline-flex h-9 items-center justify-center gap-2 px-4"
                         >
                           <MessageSquareText className="h-4 w-4" />
-                          View
-                          conversation
+                          View conversation
                         </Link>
                       </div>
                     </article>
@@ -1555,8 +1599,7 @@ export default function ProviderDashboardPage() {
         <div className="flex items-center justify-between gap-5">
           <div>
             <h2 className="text-2xl font-black">
-              Open jobs you may
-              like
+              Open jobs you may like
             </h2>
 
             {providerCategory && (

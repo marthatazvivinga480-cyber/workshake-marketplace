@@ -55,6 +55,20 @@ type CustomerBooking = {
   createdAt?: Timestamp | null
 }
 
+function formatLocation(value?: string) {
+  if (!value) {
+    return ''
+  }
+
+  return value
+    .replace(/\s+,/g, ',')
+    .replace(/,\s*/g, ', ')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\bharare\b/gi, 'Harare')
+    .replace(/\bbelvedere\b/gi, 'Belvedere')
+    .trim()
+}
+
 export default function CustomerDashboardPage() {
   const { user } = useAuth()
 
@@ -157,7 +171,9 @@ export default function CustomerDashboardPage() {
                 location:
                   typeof data.location ===
                   'string'
-                    ? data.location
+                    ? formatLocation(
+                        data.location,
+                      )
                     : '',
               }
             },
@@ -287,7 +303,9 @@ export default function CustomerDashboardPage() {
                 location:
                   typeof data.location ===
                   'string'
-                    ? data.location
+                    ? formatLocation(
+                        data.location,
+                      )
                     : '',
 
                 createdAt:
@@ -309,10 +327,14 @@ export default function CustomerDashboardPage() {
                   0),
             )
 
-        setJobs(customerJobs)
+        setJobs(
+          customerJobs,
+        )
+
         setResponses(
           customerResponses,
         )
+
         setBookings(
           customerBookings,
         )
@@ -356,7 +378,9 @@ export default function CustomerDashboardPage() {
             response.jobId,
           ) ?? []
 
-        current.push(response)
+        current.push(
+          response,
+        )
 
         grouped.set(
           response.jobId,
@@ -367,11 +391,79 @@ export default function CustomerDashboardPage() {
       return grouped
     }, [responses])
 
+  const bookingByJobId =
+    useMemo(() => {
+      const grouped =
+        new Map<
+          string,
+          CustomerBooking
+        >()
+
+      for (
+        const booking
+        of bookings
+      ) {
+        if (!booking.jobId) {
+          continue
+        }
+
+        grouped.set(
+          booking.jobId,
+          booking,
+        )
+      }
+
+      return grouped
+    }, [bookings])
+
+  function getJobDisplayStatus(
+    job: UserJob,
+    booking?: CustomerBooking,
+  ) {
+    if (!booking) {
+      return (
+        job.status ||
+        'Open'
+      )
+    }
+
+    switch (
+      booking.status
+    ) {
+      case 'Pending':
+        return 'Pending'
+
+      case 'Confirmed':
+        return 'Booked'
+
+      case 'In progress':
+        return 'In progress'
+
+      case 'Completed':
+        return 'Completed'
+
+      case 'Declined':
+      case 'Cancelled':
+        return (
+          job.status ||
+          'Open'
+        )
+
+      default:
+        return (
+          job.status ||
+          'Open'
+        )
+    }
+  }
+
   async function acceptResponse(
     response: JobResponse,
     job: UserJob,
   ) {
-    if (!db || !user) return
+    if (!db || !user) {
+      return
+    }
 
     if (
       response.customerId !==
@@ -383,11 +475,20 @@ export default function CustomerDashboardPage() {
       return
     }
 
-    if (
-      job.status === 'Booked'
-    ) {
+    const existingBooking =
+      bookings.find(
+        (booking) =>
+          booking.jobId ===
+            job.id &&
+          booking.status !==
+            'Declined' &&
+          booking.status !==
+            'Cancelled',
+      )
+
+    if (existingBooking) {
       setError(
-        'This job already has a confirmed provider.',
+        'This job already has a booking.',
       )
       return
     }
@@ -403,29 +504,39 @@ export default function CustomerDashboardPage() {
       const batch =
         writeBatch(db)
 
-      const bookingRef = doc(
-        collection(
+      const bookingRef =
+        doc(
+          collection(
+            db,
+            'bookings',
+          ),
+        )
+
+      const responseRef =
+        doc(
           db,
-          'bookings',
-        ),
-      )
+          'jobResponses',
+          response.id,
+        )
 
-      const responseRef = doc(
-        db,
-        'jobResponses',
-        response.id,
-      )
+      const jobRef =
+        doc(
+          db,
+          'jobs',
+          job.id,
+        )
 
-      const jobRef = doc(
-        db,
-        'jobs',
-        job.id,
-      )
+      const cleanLocation =
+        formatLocation(
+          job.location,
+        )
 
       batch.set(
         bookingRef,
         {
-          jobId: job.id,
+          jobId:
+            job.id,
+
           responseId:
             response.id,
 
@@ -453,7 +564,7 @@ export default function CustomerDashboardPage() {
             0,
 
           location:
-            job.location || '',
+            cleanLocation,
 
           status:
             'Confirmed',
@@ -462,6 +573,9 @@ export default function CustomerDashboardPage() {
           time: '',
 
           createdAt:
+            serverTimestamp(),
+
+          updatedAt:
             serverTimestamp(),
         },
       )
@@ -480,7 +594,8 @@ export default function CustomerDashboardPage() {
       batch.update(
         jobRef,
         {
-          status: 'Booked',
+          status:
+            'Booked',
 
           acceptedProviderId:
             response.providerId,
@@ -553,9 +668,10 @@ export default function CustomerDashboardPage() {
             time: '',
 
             location:
-              job.location || '',
+              cleanLocation,
 
-            createdAt: null,
+            createdAt:
+              null,
           },
 
           ...current,
@@ -589,7 +705,9 @@ export default function CustomerDashboardPage() {
   async function declineResponse(
     response: JobResponse,
   ) {
-    if (!db || !user) return
+    if (!db || !user) {
+      return
+    }
 
     if (
       response.customerId !==
@@ -700,6 +818,7 @@ export default function CustomerDashboardPage() {
           className="btn-primary inline-flex min-h-10 items-center justify-center gap-2 text-center leading-none"
         >
           <Plus className="h-4 w-4 shrink-0" />
+
           <span>
             Post a problem
           </span>
@@ -871,8 +990,7 @@ export default function CustomerDashboardPage() {
                         >
                           <MessageSquareText className="h-4 w-4" />
 
-                          Message
-                          provider
+                          Message provider
                         </Link>
                       </div>
                     </div>
@@ -887,6 +1005,17 @@ export default function CustomerDashboardPage() {
                       responsesByJob.get(
                         job.id,
                       ) ?? []
+
+                    const relatedBooking =
+                      bookingByJobId.get(
+                        job.id,
+                      )
+
+                    const displayStatus =
+                      getJobDisplayStatus(
+                        job,
+                        relatedBooking,
+                      )
 
                     return (
                       <div
@@ -928,8 +1057,9 @@ export default function CustomerDashboardPage() {
                             )}
 
                             <span className="status-pill inline-flex items-center justify-center leading-none">
-                              {job.status ||
-                                'Open'}
+                              {
+                                displayStatus
+                              }
                             </span>
                           </div>
                         </div>
@@ -1003,8 +1133,7 @@ export default function CustomerDashboardPage() {
 
                                     {!accepted &&
                                       !declined &&
-                                      job.status !==
-                                        'Booked' && (
+                                      !relatedBooking && (
                                         <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-forest/10 pt-3">
                                           <button
                                             type="button"
@@ -1045,16 +1174,14 @@ export default function CustomerDashboardPage() {
                                       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-forest/10 pt-3">
                                         <div className="inline-flex min-h-9 items-center gap-2 rounded-full bg-sage px-4 text-sm font-black leading-none text-ink">
                                           <Check className="h-4 w-4 shrink-0" />
-                                          Provider
-                                          accepted
+                                          Provider accepted
                                         </div>
 
                                         <Link
                                           to="/bookings"
                                           className="btn-secondary inline-flex h-9 items-center justify-center px-4 text-center leading-none"
                                         >
-                                          View
-                                          booking
+                                          View booking
                                         </Link>
                                       </div>
                                     )}
@@ -1072,8 +1199,7 @@ export default function CustomerDashboardPage() {
                 0 ? (
                 <div className="rounded-[2rem] border border-dashed border-forest/25 p-6">
                   <p className="font-black">
-                    No activity
-                    yet.
+                    No activity yet.
                   </p>
 
                   <p className="mt-1 text-sm text-forest/70">
