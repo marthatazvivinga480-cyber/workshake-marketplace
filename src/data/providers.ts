@@ -1,0 +1,10 @@
+import type { Provider } from '../types'
+
+export const providers: Provider[] = [
+  { id: 'tawanda-m', name: 'Tawanda Moyo', initials: 'TM', category: 'Home repairs', location: 'Harare', rating: 4.9, reviews: 128, jobs: 214, responseTime: '12 min', verified: true, bio: 'General handyman focused on neat, reliable home repairs and installations.', skills: ['Carpentry', 'Mounting', 'Painting', 'Furniture'], startingPrice: 20 },
+  { id: 'rudo-p', name: 'Rudo Plumbing', initials: 'RP', category: 'Plumbing', location: 'Harare', rating: 4.8, reviews: 97, jobs: 176, responseTime: '18 min', verified: true, bio: 'Residential plumbing team handling urgent leaks, fittings and maintenance.', skills: ['Leaks', 'Drains', 'Bathrooms', 'Geysers'], startingPrice: 25 },
+  { id: 'simba-e', name: 'Simba Electrics', initials: 'SE', category: 'Electrical', location: 'Chitungwiza', rating: 4.9, reviews: 84, jobs: 143, responseTime: '21 min', verified: true, bio: 'Qualified electrical support for homes and small businesses.', skills: ['Wiring', 'Lighting', 'Sockets', 'Fault finding'], startingPrice: 30 },
+  { id: 'maria-tech', name: 'Maria Tech Care', initials: 'MT', category: 'Tech repair', location: 'Harare', rating: 4.7, reviews: 63, jobs: 118, responseTime: '9 min', verified: true, bio: 'Phone, laptop and small-network support with clear explanations and upfront pricing.', skills: ['Laptops', 'Phones', 'Wi-Fi', 'Software'], startingPrice: 15 },
+  { id: 'greenhands', name: 'GreenHands Garden', initials: 'GG', category: 'Garden & outdoors', location: 'Harare', rating: 4.8, reviews: 51, jobs: 101, responseTime: '34 min', verified: true, bio: 'Friendly garden maintenance for homes, offices and rental properties.', skills: ['Lawns', 'Hedges', 'Cleanup', 'Planting'], startingPrice: 18 },
+  { id: 'moveeasy', name: 'MoveEasy Crew', initials: 'MC', category: 'Moving help', location: 'Harare', rating: 4.6, reviews: 74, jobs: 159, responseTime: '26 min', verified: true, bio: 'Small moves, furniture transport and loading help with careful handling.', skills: ['Moving', 'Delivery', 'Loading', 'Furniture'], startingPrice: 35 },
+]

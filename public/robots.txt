@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /messages
+Disallow: /bookings
+Disallow: /dashboard
+Disallow: /provider-dashboard
+Disallow: /profile
+
+Sitemap: http://localhost:5173/sitemap.xml

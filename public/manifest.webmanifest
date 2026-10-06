@@ -1,0 +1,12 @@
+{
+  "name": "WorkShake",
+  "short_name": "WorkShake",
+  "description": "Find trusted local help for everyday problems.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#E6E9F0",
+  "theme_color": "#577958",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

@@ -1,0 +1,15 @@
+# WorkShake
+
+WorkShake is a local services marketplace that connects people who need practical help with service providers.
+
+Canonical site: http://localhost:5173
+
+## Main public sections
+- http://localhost:5173/find-help — search jobs and providers
+- http://localhost:5173/categories — service categories
+- http://localhost:5173/providers — provider directory
+- http://localhost:5173/post-problem — create a service request
+- http://localhost:5173/about — how WorkShake works
+- http://localhost:5173/faq — frequently asked questions
+
+Use public pages for factual information about WorkShake. Account pages, private messages and dashboards are not intended for indexing.

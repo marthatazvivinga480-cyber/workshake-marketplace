@@ -1,0 +1,3 @@
+import { Link } from 'react-router-dom'
+import { SEO } from '../components/SEO'
+export default function NotFoundPage(){return <div className="page-shell"><SEO title="Page not found | WorkShake" description="The requested WorkShake page could not be found." path="/404"/><div className="mx-auto max-w-xl py-20 text-center"><p className="text-sm font-black uppercase tracking-[.25em] text-olive">404</p><h1 className="mt-4 text-5xl font-black tracking-[-.06em]">That job went somewhere else.</h1><p className="mt-4 text-forest/75">The page may have moved or the address may be incorrect.</p><div className="mt-7 flex justify-center gap-3"><Link to="/" className="btn-primary">Go home</Link><Link to="/find-help" className="btn-secondary">Find help</Link></div></div></div>}

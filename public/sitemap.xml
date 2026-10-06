@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>http://localhost:5173/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>http://localhost:5173/find-help</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>http://localhost:5173/categories</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>http://localhost:5173/post-problem</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>http://localhost:5173/providers</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>http://localhost:5173/become-a-provider</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>http://localhost:5173/reviews</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>http://localhost:5173/about</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>http://localhost:5173/contact</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>http://localhost:5173/faq</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>http://localhost:5173/terms</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>http://localhost:5173/privacy</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>http://localhost:5173/category/home-repairs</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>http://localhost:5173/category/plumbing</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>http://localhost:5173/category/electrical</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>http://localhost:5173/category/tech-repair</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>http://localhost:5173/provider/tawanda-m</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>http://localhost:5173/provider/rudo-p</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>http://localhost:5173/job/leaking-kitchen-tap</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+</urlset>

@@ -1,0 +1,43 @@
+{
+  "name": "workshake",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "seo:generate": "node scripts/generate-seo.mjs",
+    "build": "npm run seo:generate && vite build && node scripts/prerender.mjs",
+    "preview": "vite preview",
+    "deploy": "npm run build && wrangler deploy",
+    "cf-typegen": "wrangler types",
+    "typecheck": "tsc -b --pretty false",
+    "firebase:rules": "npx firebase-tools deploy --only firestore:rules,firestore:indexes",
+    "images:optimize": "node scripts/optimize-images.mjs"
+  },
+  "dependencies": {
+    "express": "latest",
+    "firebase": "^9.14.0",
+    "lucide-react": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-router-dom": "latest"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "latest",
+    "@cloudflare/workers-types": "latest",
+    "@tailwindcss/vite": "latest",
+    "@types/express": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@vitejs/plugin-react": "latest",
+    "sharp": "latest",
+    "tailwindcss": "latest",
+    "typescript": "latest",
+    "vite": "latest",
+    "wrangler": "latest"
+  }
+}

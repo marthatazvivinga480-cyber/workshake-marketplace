@@ -1,0 +1,145 @@
+[
+  {
+    "path": "/",
+    "title": "WorkShake \u2014 Find trusted local help",
+    "description": "Post a problem, compare trusted local providers and book the right help with WorkShake."
+  },
+  {
+    "path": "/find-help",
+    "title": "Find local help | WorkShake",
+    "description": "Browse open jobs, local services and trusted providers ready to help."
+  },
+  {
+    "path": "/categories",
+    "title": "Service categories | WorkShake",
+    "description": "Explore home repair, plumbing, electrical, moving, tech repair, tutoring and more."
+  },
+  {
+    "path": "/post-problem",
+    "title": "Post a problem | WorkShake",
+    "description": "Describe what you need, set your budget and receive responses from suitable local providers."
+  },
+  {
+    "path": "/providers",
+    "title": "Trusted service providers | WorkShake",
+    "description": "Compare verified local providers by service, rating, experience and response time."
+  },
+  {
+    "path": "/messages",
+    "title": "Messages | WorkShake",
+    "description": "Keep job conversations organized in one place.",
+    "index": false
+  },
+  {
+    "path": "/bookings",
+    "title": "My bookings | WorkShake",
+    "description": "Manage upcoming, active and completed WorkShake bookings.",
+    "index": false
+  },
+  {
+    "path": "/become-a-provider",
+    "title": "Become a provider | WorkShake",
+    "description": "Join WorkShake as a local service provider and connect with customers who need your skills."
+  },
+  {
+    "path": "/sign-in",
+    "title": "Sign in | WorkShake",
+    "description": "Sign in to manage jobs, bookings, messages and your WorkShake profile.",
+    "index": false
+  },
+  {
+    "path": "/sign-up",
+    "title": "Create an account | WorkShake",
+    "description": "Create your WorkShake account to request help or offer local services.",
+    "index": false
+  },
+  {
+    "path": "/forgot-password",
+    "title": "Reset password | WorkShake",
+    "description": "Reset your WorkShake account password securely.",
+    "index": false
+  },
+  {
+    "path": "/dashboard",
+    "title": "Customer dashboard | WorkShake",
+    "description": "Track your jobs, provider responses and bookings from your WorkShake dashboard.",
+    "index": false
+  },
+  {
+    "path": "/provider-dashboard",
+    "title": "Provider dashboard | WorkShake",
+    "description": "Manage leads, bookings, profile performance and customer work.",
+    "index": false
+  },
+  {
+    "path": "/profile",
+    "title": "Profile and settings | WorkShake",
+    "description": "Manage your WorkShake profile and account settings.",
+    "index": false
+  },
+  {
+    "path": "/reviews",
+    "title": "Customer reviews | WorkShake",
+    "description": "Read verified WorkShake reviews and learn how ratings support trusted local work."
+  },
+  {
+    "path": "/about",
+    "title": "About WorkShake",
+    "description": "Learn why WorkShake exists and how it makes finding reliable local help simpler."
+  },
+  {
+    "path": "/contact",
+    "title": "Contact WorkShake",
+    "description": "Contact WorkShake for account, provider or platform support."
+  },
+  {
+    "path": "/faq",
+    "title": "Frequently asked questions | WorkShake",
+    "description": "Answers about posting jobs, choosing providers, bookings, safety and accounts."
+  },
+  {
+    "path": "/terms",
+    "title": "Terms of service | WorkShake",
+    "description": "Read the WorkShake terms of service."
+  },
+  {
+    "path": "/privacy",
+    "title": "Privacy policy | WorkShake",
+    "description": "Read how WorkShake handles account and platform information."
+  },
+  {
+    "path": "/category/home-repairs",
+    "title": "Home repair services | WorkShake",
+    "description": "Find local handymen and home repair providers on WorkShake."
+  },
+  {
+    "path": "/category/plumbing",
+    "title": "Plumbing services | WorkShake",
+    "description": "Find local plumbing help for leaks, drains, taps and fittings."
+  },
+  {
+    "path": "/category/electrical",
+    "title": "Electrical services | WorkShake",
+    "description": "Find local electricians for faults, lighting, sockets and wiring."
+  },
+  {
+    "path": "/category/tech-repair",
+    "title": "Tech repair services | WorkShake",
+    "description": "Find local help for phones, laptops, Wi-Fi and devices."
+  },
+  {
+    "path": "/provider/tawanda-m",
+    "title": "Tawanda Moyo \u2014 Home repairs | WorkShake",
+    "description": "View skills, ratings and service details for Tawanda Moyo on WorkShake."
+  },
+  {
+    "path": "/provider/rudo-p",
+    "title": "Rudo Plumbing | WorkShake",
+    "description": "View skills, ratings and service details for Rudo Plumbing on WorkShake."
+  },
+  {
+    "path": "/job/leaking-kitchen-tap",
+    "title": "Kitchen tap leaking badly | WorkShake",
+    "description": "View this open plumbing job on WorkShake."
+  }
+]

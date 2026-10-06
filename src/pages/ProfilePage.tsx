@@ -1,0 +1,12 @@
+import { updateProfile } from 'firebase/auth'
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { FormEvent, useState } from 'react'
+import { SEO } from '../components/SEO'
+import { useAuth } from '../context/AuthContext'
+import { db } from '../lib/firebase'
+
+export default function ProfilePage() {
+  const { user } = useAuth(); const [message, setMessage] = useState(''); const [error, setError] = useState('')
+  async function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); if (!user) return; const data = new FormData(event.currentTarget); const name = String(data.get('name')).trim(); const phone = String(data.get('phone')).trim(); const location = String(data.get('location')).trim(); try { await updateProfile(user, { displayName: name }); if (db) await setDoc(doc(db,'users',user.uid), { name, phone, location, updatedAt: serverTimestamp() }, { merge: true }); setMessage('Profile updated.'); setError('') } catch (e) { setError(e instanceof Error ? e.message : 'Could not update profile.') } }
+  return <div className="page-shell"><SEO title="Profile and settings | WorkShake" description="Manage your WorkShake profile and account settings." path="/profile"  noindex/><div className="mx-auto max-w-2xl"><p className="text-xs font-black uppercase tracking-[.2em] text-olive">Account settings</p><h1 className="mt-3 text-4xl font-black tracking-[-.05em]">Your profile.</h1><form onSubmit={submit} className="mt-8 grid gap-5 rounded-[2rem] border border-forest/10 bg-mist p-6 shadow-soft"><label className="form-field"><span className="form-label">Name</span><input className="form-input" name="name" defaultValue={user?.displayName ?? ''} required /></label><label className="form-field"><span className="form-label">Email</span><input className="form-input opacity-70" value={user?.email ?? ''} disabled /></label><label className="form-field"><span className="form-label">Phone</span><input className="form-input" name="phone" inputMode="tel" /></label><label className="form-field"><span className="form-label">Location</span><input className="form-input" name="location" placeholder="Town / area" /></label>{error && <p className="rounded-xl bg-sun p-3 text-sm font-bold" role="alert">{error}</p>}{message && <p className="rounded-xl bg-sage p-3 text-sm font-bold" role="status">{message}</p>}<button className="btn-primary w-fit">Save changes</button></form></div></div>
+}
